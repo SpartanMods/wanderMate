@@ -18,6 +18,7 @@ import {
   SKILL_LEVELS,
   VEHICLE_OPTIONS,
 } from "@/lib/constants";
+import { ORIGIN_PRESETS, resolveOrigin } from "@/lib/geo";
 import { getRandomTripRecommendation } from "@/lib/randomTrip";
 import type {
   ActivityKey,
@@ -96,15 +97,27 @@ export default function SurprisePage() {
 
       <form onSubmit={roll} className="card space-y-5 p-5 sm:p-6">
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Starting location">
+          <Field
+            label="Starting location"
+            hint="Pick a hub to adjust drive times; others fall back to Denver."
+          >
             <input
               className="input-base"
+              list="origin-presets"
               value={form.startingLocation}
               onChange={(e) => set("startingLocation", e.target.value)}
               placeholder="Denver, CO"
             />
+            <datalist id="origin-presets">
+              {ORIGIN_PRESETS.map((o) => (
+                <option key={o.id} value={o.label} />
+              ))}
+            </datalist>
           </Field>
-          <Field label="Max drive time" hint="Estimated from Denver in v1.">
+          <Field
+            label="Max drive time"
+            hint="Estimated from your starting location."
+          >
             <OptionGroup
               columns={3}
               options={DRIVE_TIME_OPTIONS}

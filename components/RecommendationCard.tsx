@@ -82,12 +82,15 @@ export function RecommendationCard({
   rec,
   rank,
   featured = false,
+  originLabel = "Denver, CO",
 }: {
   rec: TripRecommendation;
   rank: number;
   featured?: boolean;
+  originLabel?: string;
 }) {
   const [open, setOpen] = useState(featured);
+  const originShort = originLabel.split(",")[0];
   const { trip, score, qualityLabel, breakdown, whyItMatches, whyItMightNot } =
     rec;
   const bestFor = topActivities(trip);
@@ -150,8 +153,8 @@ export function RecommendationCard({
         {/* Stat grid */}
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <StatTile
-            label="Drive (Denver)"
-            value={formatDriveTime(trip.driveTimeFromDenverHours)}
+            label={`Drive (${originShort})`}
+            value={formatDriveTime(rec.effectiveDriveHours)}
           />
           <StatTile label="Skill" value={titleCase(trip.skillLevel)} />
           <StatTile label="Off-grid" value={`${trip.offGridLevel}/4`} />

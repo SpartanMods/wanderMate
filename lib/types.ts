@@ -112,4 +112,6 @@ export type TripRecommendation = {
   breakdown: ScoreBreakdown;
   whyItMatches: string[];
   whyItMightNot: string[];
+  /** Drive time from the user's chosen starting location, in hours. */
+  effectiveDriveHours: number;
 };

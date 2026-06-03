@@ -18,6 +18,7 @@ import {
   VEHICLE_OPTIONS,
   VIBE_OPTIONS,
 } from "@/lib/constants";
+import { ORIGIN_PRESETS } from "@/lib/geo";
 import { savePreferences } from "@/lib/storage";
 import type {
   ActivityKey,
@@ -94,17 +95,26 @@ export function TripPreferenceForm() {
       <section className="card p-5 sm:p-6">
         <h2 className="mb-4 text-lg font-bold text-sand-50">Trip basics</h2>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Starting location">
+          <Field
+            label="Starting location"
+            hint="Pick a regional hub to adjust drive times. Others fall back to Denver."
+          >
             <input
               className="input-base"
+              list="origin-presets"
               value={prefs.startingLocation}
               onChange={(e) => update("startingLocation", e.target.value)}
               placeholder="Denver, CO"
             />
+            <datalist id="origin-presets">
+              {ORIGIN_PRESETS.map((o) => (
+                <option key={o.id} value={o.label} />
+              ))}
+            </datalist>
           </Field>
           <Field
             label="Max drive time"
-            hint="v1 estimates drive time from Denver."
+            hint="Drive time is estimated from your starting location."
           >
             <OptionGroup
               columns={3}

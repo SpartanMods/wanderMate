@@ -69,6 +69,8 @@ npm run typecheck  # tsc --noEmit
 - **Region diversity** logic so the top set isn't five versions of the same place
 - Beginner / intermediate / advanced / expert **suitability logic**
 - Off-grid, crowd, vehicle, camping, vibe, season, and gear matching
+- **Origin-aware drive times** — pick a regional starting hub and every zone's
+  drive time (and the drive-time score) recalculates relative to it
 - Must-avoid filtering with penalties
 - **Surprise Me** weighted-random mode (1 primary + 2 backups)
 - Safety & verification notice on results, surprise, and detail sections
@@ -89,7 +91,7 @@ Each location is a `TripZone` (see `lib/types.ts`). Key fields:
 | `hiddenGemScore` / `popularityScore` | 1–5 each, drive the discovery logic |
 | `vehicleRequirement` | `any_car` → `high_clearance_4x4` / `ohv` |
 | `campingTypes` | developed / dispersed / backpacking |
-| `driveTimeFromDenverHours` | used for the drive-time fit (v1 anchors on Denver) |
+| `driveTimeFromDenverHours` | Denver baseline; adjusted per chosen origin (see `lib/geo.ts`) |
 | `bestSeasons`, `vibes`, `avoidFlags` | matching signals |
 | `watchouts`, `safetyNotes`, `suggestedItinerary`, `backupOptions` | trip detail |
 | `sourceLinks`, `dataConfidence` | provenance & honesty |
@@ -185,8 +187,12 @@ require no algorithm changes.
 3. The MVP does **not include live maps**.
 4. The MVP does **not include user accounts** or auth.
 5. The MVP does **not include exact campsite coordinates** — general areas only.
-6. Drive time anchors on **Denver** in v1 regardless of the entered starting
-   location (the field exists so the product is expandable).
+6. **No real geocoding.** Drive times adjust for a curated set of regional
+   origin hubs (Denver, Boulder, Fort Collins, Colorado Springs, Pueblo, Grand
+   Junction, Cheyenne, Laramie, Salt Lake City, Moab) by modeling each trip as a
+   geographic delta off the Denver baseline. Arbitrary addresses we don't
+   recognize fall back to Denver-based times — true address geocoding is a
+   future enhancement.
 7. **Users must verify official conditions and regulations before going.**
 
 ## 11. Future enhancements
@@ -217,7 +223,7 @@ require no algorithm changes.
   TripPreferenceForm.tsx      ScoreBreakdown.tsx      SurpriseTripCard.tsx
   SafetyNotice.tsx  FormControls.tsx  Badge.tsx  Button.tsx
 /lib
-  types.ts  constants.ts  scoring.ts  matching.ts
+  types.ts  constants.ts  scoring.ts  matching.ts  geo.ts
   randomTrip.ts  validation.ts  storage.ts  utils.ts
 /data
   tripZones.ts        # 24 curated seed zones

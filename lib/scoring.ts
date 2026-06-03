@@ -23,6 +23,7 @@ import type {
   TripZone,
   VehicleRequirement,
 } from "./types";
+import { getEffectiveDriveHours, resolveOrigin } from "./geo";
 import { clamp, inferSeason } from "./utils";
 
 /** Effective max drive time. A user picking "6+" means no real cap. */
@@ -71,7 +72,7 @@ function scoreActivities(prefs: TripPreferences, trip: TripZone): number {
 
 function scoreDriveTime(prefs: TripPreferences, trip: TripZone): number {
   const max = effectiveMaxDrive(prefs.maxDriveTimeHours);
-  const drive = trip.driveTimeFromDenverHours;
+  const drive = getEffectiveDriveHours(prefs, trip);
   if (drive <= max) return SCORE_WEIGHTS.driveTimeFit;
   if (drive <= max + 1) return SCORE_WEIGHTS.driveTimeFit * 0.4;
   if (drive <= max + 2) return SCORE_WEIGHTS.driveTimeFit * 0.2;
@@ -286,7 +287,7 @@ function computePenalties(prefs: TripPreferences, trip: TripZone): number {
 
   // Drive slightly over max.
   const max = effectiveMaxDrive(prefs.maxDriveTimeHours);
-  const drive = trip.driveTimeFromDenverHours;
+  const drive = getEffectiveDriveHours(prefs, trip);
   if (drive > max && drive <= max + 2) {
     penalty -= drive <= max + 1 ? 12 : 18;
   }
@@ -417,7 +418,7 @@ export function hasHardConstraintViolation(
 ): boolean {
   // Drive time far above the user's max.
   const max = effectiveMaxDrive(prefs.maxDriveTimeHours);
-  if (trip.driveTimeFromDenverHours > max + 2) return true;
+  if (getEffectiveDriveHours(prefs, trip) > max + 2) return true;
 
   // Beginner (or otherwise under-skilled) user vs. much harder trip.
   const userRank = SKILL_RANK[prefs.experienceLevel];
@@ -452,9 +453,11 @@ export function explainMatch(
     );
   }
 
+  const originLabel = resolveOrigin(prefs.startingLocation).label;
+  const driveHrs = getEffectiveDriveHours(prefs, trip);
   if (breakdown.driveTimeFit >= SCORE_WEIGHTS.driveTimeFit) {
     whyItMatches.push(
-      `Within your drive window (~${trip.driveTimeFromDenverHours} hrs from Denver).`
+      `Within your drive window (~${driveHrs} hrs from ${originLabel}).`
     );
   }
 
@@ -508,10 +511,8 @@ export function explainMatch(
     whyItMightNot.push("Significantly harder than your experience level.");
 
   const max = effectiveMaxDrive(prefs.maxDriveTimeHours);
-  if (trip.driveTimeFromDenverHours > max)
-    whyItMightNot.push(
-      `Longer drive than your max (~${trip.driveTimeFromDenverHours} hrs).`
-    );
+  if (driveHrs > max)
+    whyItMightNot.push(`Longer drive than your max (~${driveHrs} hrs).`);
 
   const vGap =
     VEHICLE_RANK[trip.vehicleRequirement] -

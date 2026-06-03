@@ -61,7 +61,7 @@ export function SurprisePrimaryCard({
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Stat label="Drive" value={formatDriveTime(trip.driveTimeFromDenverHours)} />
+          <Stat label="Drive" value={formatDriveTime(rec.effectiveDriveHours)} />
           <Stat label="Skill" value={titleCase(trip.skillLevel)} />
           <Stat label="Off-grid" value={`${trip.offGridLevel}/4`} />
           <Stat label="Vehicle" value={VEHICLE_LABELS[trip.vehicleRequirement]} />

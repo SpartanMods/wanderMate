@@ -4,6 +4,7 @@
  * list doesn't read as five flavors of the same destination.
  */
 
+import { getEffectiveDriveHours } from "./geo";
 import {
   calculateTripScore,
   explainMatch,
@@ -25,6 +26,7 @@ function buildRecommendation(
     breakdown,
     whyItMatches,
     whyItMightNot,
+    effectiveDriveHours: getEffectiveDriveHours(prefs, trip),
   };
 }
 
@@ -92,7 +94,7 @@ export function diagnoseRestrictiveness(
   const max = preferences.maxDriveTimeHours >= 6 ? 99 : preferences.maxDriveTimeHours;
 
   const withinDrive = trips.filter(
-    (t) => t.driveTimeFromDenverHours <= max + 2
+    (t) => getEffectiveDriveHours(preferences, t) <= max + 2
   ).length;
   if (withinDrive < 4)
     reasons.push("Your max drive time is filtering out most zones — try adding an hour or two.");

@@ -7,6 +7,7 @@ import { PreferenceSummary } from "@/components/PreferenceSummary";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SafetyNotice } from "@/components/SafetyNotice";
 import tripZones from "@/data/tripZones";
+import { isKnownOrigin, resolveOrigin } from "@/lib/geo";
 import {
   diagnoseRestrictiveness,
   getClosestMatches,
@@ -63,6 +64,8 @@ export default function ResultsPage() {
   const list = hasStrong ? recs : getClosestMatches(prefs, tripZones, 3);
   const top = list[0];
   const rest = list.slice(1);
+  const originLabel = resolveOrigin(prefs.startingLocation).label;
+  const originRecognized = isKnownOrigin(prefs.startingLocation);
 
   return (
     <div className="space-y-6">
@@ -76,6 +79,11 @@ export default function ResultsPage() {
             {hasStrong
               ? `${strong.length} strong match${strong.length === 1 ? "" : "es"} out of ${recs.length} zones scored.`
               : "No strong matches — showing the closest options with warnings."}
+          </p>
+          <p className="mt-1 text-xs text-basecamp-600">
+            {originRecognized
+              ? `Drive times estimated from ${originLabel}.`
+              : `We didn't recognize “${prefs.startingLocation}” — drive times fall back to Denver, CO.`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -141,7 +149,12 @@ export default function ResultsPage() {
       {/* Top pick */}
       {top && (
         <div>
-          <RecommendationCard rec={top} rank={1} featured />
+          <RecommendationCard
+            rec={top}
+            rank={1}
+            featured
+            originLabel={originLabel}
+          />
         </div>
       )}
 
@@ -150,7 +163,12 @@ export default function ResultsPage() {
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-sand-50">More options</h2>
           {rest.map((rec, i) => (
-            <RecommendationCard key={rec.trip.id} rec={rec} rank={i + 2} />
+            <RecommendationCard
+              key={rec.trip.id}
+              rec={rec}
+              rank={i + 2}
+              originLabel={originLabel}
+            />
           ))}
         </div>
       )}

@@ -5,6 +5,7 @@
  * pick is surprising but still relevant.
  */
 
+import { getEffectiveDriveHours } from "./geo";
 import {
   calculateTripScore,
   explainMatch,
@@ -27,6 +28,7 @@ function buildRecommendation(
     breakdown,
     whyItMatches,
     whyItMightNot,
+    effectiveDriveHours: getEffectiveDriveHours(prefs, trip),
   };
 }
 
