@@ -94,13 +94,49 @@ Each location is a `TripZone` (see `lib/types.ts`). Key fields:
 | `driveTimeFromDenverHours` | Denver baseline; adjusted per chosen origin (see `lib/geo.ts`) |
 | `bestSeasons`, `vibes`, `avoidFlags` | matching signals |
 | `watchouts`, `safetyNotes`, `suggestedItinerary`, `backupOptions` | trip detail |
-| `sourceLinks`, `dataConfidence` | provenance & honesty |
+| `sourceLinks`, `dataConfidence` | provenance & honesty (legacy) |
+| `landManager` | governing agency (USFS / BLM / NPS / state / mixed / …) |
+| `dataQuality` | **category-based** confidence + `lastReviewedAt` (see below) |
+| `sensitiveLocationLevel` | how generalized the location is (`generalized` / `fragile` / …) |
+| `roadAccess` | access difficulty, clearance, 4WD, trailer, winter risk |
+| `legality` | dispersed-camping, fire, permit, OHV & plated-vehicle rules |
+| `remoteness` | cell service, nearest town, fuel distance, water availability |
+| `verificationLinks` | categorized official links to verify current conditions |
 
 User input is a `TripPreferences` object; engine output is a
 `TripRecommendation` containing a `ScoreBreakdown`.
 
 > **No exact campsite coordinates.** Zones describe *general areas* only, to
 > protect fragile/sensitive places.
+
+### Data quality & honesty model
+
+WanderMate's seed data is **manually curated, not live**. To keep that honest,
+every zone carries a structured `dataQuality` object that rates confidence
+**by category** — `overall`, `access`, `camping`, `activities`, `legality`,
+and `seasonality` — each a `{ level: "high" | "medium" | "low"; notes }` pair,
+plus a `lastReviewedAt` date. Key principles:
+
+- **The app uses generalized trip zones only.** Locations are described as
+  general areas, never exact campsites or coordinates.
+- **Exact sensitive locations are intentionally protected.** Fragile or
+  culturally sensitive places are kept deliberately coarse
+  (`sensitiveLocationLevel`), and restricted areas withhold detail by design.
+- **Data confidence is category-based**, not a single global flag. When a value
+  is uncertain it is marked `medium`/`low` with a note explaining why, and
+  legality fields use honest `area_specific` / `unknown` values rather than
+  inventing exact rules.
+- **Official conditions are not live.** Nothing in the app reflects real-time
+  weather, fire restrictions, road status, or closures.
+- **Users must verify** weather, road access, fire restrictions, camping
+  legality, OHV legality, permits, and closures through the official
+  `verificationLinks` (and the land manager) **before every trip.**
+
+The UI surfaces this directly: each recommendation card shows overall / access /
+legality confidence, the land manager, the last-reviewed date, a
+sensitive-location note where applicable, and a compact "Verify before you go"
+row. The expanded details add a full per-category breakdown plus road-access,
+legality, and remoteness facts and categorized verification links.
 
 ## 6. Matching algorithm overview
 
@@ -122,8 +158,13 @@ User input is a `TripPreferences` object; engine output is a
 
 Then **penalties** are applied (must-avoid conflicts, missing must-have
 activities, drive slightly over max, skill/vehicle stretch, crowded-when-quiet,
-low data confidence) and a **hidden-gem boost / popularity dampening** is added.
-The final score is clamped to 0–100.
+and **data-quality confidence**) and a **hidden-gem boost / popularity
+dampening** is added. The final score is clamped to 0–100.
+
+**Data-quality penalties** come from the structured `dataQuality` model and are
+intentionally light so they nudge rather than dominate: overall `low` −6 /
+`medium` −2, legality `low` −8 / `medium` −3 (weighted highest, since permit /
+fire / OHV mistakes carry real consequences), and access `low` −5.
 
 **Hard constraints** (`hasHardConstraintViolation`) *exclude* a trip entirely —
 drive time far over max, a beginner facing an advanced/expert zone, or a severe
@@ -171,8 +212,12 @@ draw.
    (TypeScript will tell you if a field is missing or mistyped).
 3. Rate all 15 activities 0–5, set skill/off-grid/crowd/gem/popularity, vehicle
    requirement, camping types, drive time from Denver, seasons, vibes, avoid
-   flags, watchouts, safety notes, an itinerary, backups, source links, and a
-   `dataConfidence`.
+   flags, watchouts, safety notes, an itinerary, backups, source links, and the
+   data-quality fields: `landManager`, `sensitiveLocationLevel`, `roadAccess`,
+   `legality`, `remoteness`, a `dataQuality` block (use the `cat()` helper and
+   shared `NOTE`s), and categorized `verificationLinks` (use the `verify()`
+   helper). Bias to `medium`/`low` confidence and `area_specific`/`unknown`
+   legality when you are not certain — never invent exact conditions.
 4. Use **general areas only** — never exact fragile coordinates.
 5. Run `npm run typecheck` and `npm run build` to confirm everything compiles.
 
@@ -181,8 +226,9 @@ require no algorithm changes.
 
 ## 10. Known limitations
 
-1. The MVP uses **manually curated seed data** (`dataConfidence` is marked on
-   every zone — mostly `medium`).
+1. The MVP uses **manually curated seed data**. Every zone carries a
+   category-based `dataQuality` rating (mostly `medium`) with last-reviewed
+   dates — it is a planning aid, not verified conditions.
 2. The MVP does **not verify real-time conditions** (weather, fire, closures).
 3. The MVP does **not include live maps**.
 4. The MVP does **not include user accounts** or auth.
@@ -221,10 +267,10 @@ require no algorithm changes.
 /components
   ActivityWeightSelector.tsx  RecommendationCard.tsx  PreferenceSummary.tsx
   TripPreferenceForm.tsx      ScoreBreakdown.tsx      SurpriseTripCard.tsx
-  SafetyNotice.tsx  FormControls.tsx  Badge.tsx  Button.tsx
+  DataQuality.tsx   SafetyNotice.tsx  FormControls.tsx  Badge.tsx  Button.tsx
 /lib
   types.ts  constants.ts  scoring.ts  matching.ts  geo.ts
-  randomTrip.ts  validation.ts  storage.ts  utils.ts
+  dataQuality.ts  randomTrip.ts  validation.ts  storage.ts  utils.ts
 /data
   tripZones.ts        # 24 curated seed zones
 ```

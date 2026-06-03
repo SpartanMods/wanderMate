@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Badge } from "./Badge";
+import { DataQualityDetails, DataQualitySummary } from "./DataQuality";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 import { SafetyNotice } from "./SafetyNotice";
 import {
@@ -71,12 +72,6 @@ function topActivities(trip: TripRecommendation["trip"]): string[] {
     .slice(0, 5)
     .map(([k]) => ACTIVITY_LABELS[k]);
 }
-
-const confidenceTone = {
-  high: "moss",
-  medium: "sand",
-  low: "rust",
-} as const;
 
 export function RecommendationCard({
   rec,
@@ -166,17 +161,19 @@ export function RecommendationCard({
           />
         </div>
 
-        {/* Camping + confidence row */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {trip.campingTypes.map((c) => (
-            <Badge key={c} tone="neutral">
-              {CAMPING_LABELS[c]}
-            </Badge>
-          ))}
-          <Badge tone={confidenceTone[trip.dataConfidence]}>
-            Data: {trip.dataConfidence}
-          </Badge>
-        </div>
+        {/* Camping row */}
+        {trip.campingTypes.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {trip.campingTypes.map((c) => (
+              <Badge key={c} tone="neutral">
+                {CAMPING_LABELS[c]}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Data quality + verification summary */}
+        <DataQualitySummary trip={trip} />
 
         {/* Why it matches / might not */}
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -261,30 +258,14 @@ export function RecommendationCard({
                 </h4>
                 <ScoreBreakdown breakdown={breakdown} />
               </div>
-              {trip.sourceLinks.length > 0 && (
-                <div>
-                  <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-sand-300">
-                    Sources
-                  </h4>
-                  <ul className="space-y-1 text-sm">
-                    {trip.sourceLinks.map((s) => (
-                      <li key={s.url}>
-                        <a
-                          href={s.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-moss-300 underline-offset-2 hover:underline"
-                        >
-                          {s.label}
-                        </a>{" "}
-                        <span className="text-basecamp-600">({s.type})</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
           </div>
+
+          {/* Full data-quality, access, legality & verification breakdown */}
+          <div className="mt-6 border-t border-basecamp-800 pt-5">
+            <DataQualityDetails trip={trip} />
+          </div>
+
           <SafetyNotice compact className="mt-5" />
         </div>
       )}

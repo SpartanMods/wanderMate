@@ -1,4 +1,5 @@
 import { Badge } from "./Badge";
+import { DataQualitySummary } from "./DataQuality";
 import {
   ACTIVITY_LABELS,
   VEHICLE_LABELS,
@@ -66,6 +67,8 @@ export function SurprisePrimaryCard({
           <Stat label="Off-grid" value={`${trip.offGridLevel}/4`} />
           <Stat label="Vehicle" value={VEHICLE_LABELS[trip.vehicleRequirement]} />
         </div>
+
+        <DataQualitySummary trip={trip} />
 
         {trip.watchouts.length > 0 && (
           <div className="mt-4">

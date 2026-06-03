@@ -11,7 +11,100 @@
  * improve and extend this data set.
  */
 
-import type { TripZone } from "../lib/types";
+import type {
+  ConfidenceCategory,
+  ConfidenceLevel,
+  TripZone,
+  VerificationLink,
+} from "../lib/types";
+
+// ---------------------------------------------------------------------------
+// Data-quality scaffolding
+//
+// All values below are MANUALLY CURATED from public land-manager information,
+// not measured or live. The helpers and shared notes keep the seed data honest
+// (every category explains its own uncertainty) without repeating boilerplate
+// 24 times. When in doubt we bias toward "medium"/"low" confidence and
+// "area_specific"/"unknown" legality rather than inventing exact conditions.
+// ---------------------------------------------------------------------------
+
+/** Build a confidence category with an explanatory note. */
+const cat = (level: ConfidenceLevel, notes: string): ConfidenceCategory => ({
+  level,
+  notes,
+});
+
+// Reusable, honest notes describing *why* a category is curated/uncertain.
+const NOTE = {
+  access:
+    "Access difficulty estimated from land-manager route descriptions; real conditions change with weather and maintenance.",
+  accessRemote:
+    "Remote, unmaintained roads — conditions vary widely and can be impassable. Scout current reports before committing.",
+  camping:
+    "Camping rules generalized from agency guidance; confirm current dispersed-camping rules, closures and stay limits.",
+  activities:
+    "Activity ratings are editorial estimates of suitability, not measured or guaranteed.",
+  legality:
+    "Permits, fire rules and OHV legality vary by sub-area and season — always verify with the managing agency.",
+  legalityComplex:
+    "Multiple jurisdictions with different rules; legality is genuinely complex here — verify per sub-area before you go.",
+  seasonality:
+    "Best-season guidance reflects a typical year only; actual access depends on snowpack, runoff and closures.",
+  overall:
+    "Hand-curated from public sources as a planning aid — treat as a starting point, not verified conditions.",
+} as const;
+
+// Most-recent hand review. A couple of low-confidence zones are intentionally
+// older to make the "last reviewed" signal meaningful.
+const REVIEWED = "2026-05-15";
+const REVIEWED_STALE = "2025-09-20";
+
+// Real, official, *general* verification resources (no deep/fragile links).
+const WEATHER_LINK: VerificationLink = {
+  label: "National Weather Service forecast",
+  url: "https://www.weather.gov/",
+  type: "official",
+  category: "weather",
+};
+
+const ROAD_LINK: Record<TripZone["state"], VerificationLink> = {
+  CO: {
+    label: "Colorado road conditions (COtrip)",
+    url: "https://www.cotrip.org/",
+    type: "official",
+    category: "road",
+  },
+  WY: {
+    label: "Wyoming road conditions (WYDOT 511)",
+    url: "https://www.wyoroad.info/",
+    type: "official",
+    category: "road",
+  },
+  UT: {
+    label: "Utah road conditions (UDOT Traffic)",
+    url: "https://udottraffic.utah.gov/",
+    type: "official",
+    category: "road",
+  },
+};
+
+/**
+ * Compose verification links: the zone's managing-agency page (categorized as
+ * land_manager) plus shared official weather and state road-condition links.
+ */
+const verify = (
+  managing: { label: string; url: string },
+  state: TripZone["state"]
+): VerificationLink[] => [
+  {
+    label: managing.label,
+    url: managing.url,
+    type: "official",
+    category: "land_manager",
+  },
+  WEATHER_LINK,
+  ROAD_LINK[state],
+];
 
 const tripZones: TripZone[] = [
   {
@@ -74,6 +167,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 3,
+      clearanceNeeded: 'moderate_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 5,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 2,
+      nearestTown: 'Almont / Gunnison, CO',
+      fuelDistanceMilesEstimate: 25,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'San Isabel NF (US Forest Service)',
+        url: 'https://www.fs.usda.gov/recarea/psicc/recarea/?recid=12687',
+      },
+      'CO'
+    ),
   },
   {
     id: 'grand-mesa',
@@ -135,6 +266,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 2,
+      clearanceNeeded: 'low_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Cedaredge / Mesa, CO',
+      fuelDistanceMilesEstimate: 20,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Grand Mesa NF (US Forest Service)',
+        url: 'https://www.fs.usda.gov/recarea/gmug/recarea/?recid=32742',
+      },
+      'CO'
+    ),
   },
   {
     id: 'flat-tops',
@@ -196,6 +365,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'fragile',
+    roadAccess: {
+      accessRoadDifficulty: 4,
+      clearanceNeeded: 'high_clearance',
+      fourWheelDriveRequired: true,
+      trailerFriendly: false,
+      winterAccessRisk: 5,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'no',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 1,
+      nearestTown: 'Meeker / Yampa, CO',
+      fuelDistanceMilesEstimate: 35,
+      waterAvailability: 'seasonal',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('low', NOTE.accessRemote),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Flat Tops Wilderness (White River NF)',
+        url: 'https://www.fs.usda.gov/recarea/whiteriver/recarea/?recid=81118',
+      },
+      'CO'
+    ),
   },
   {
     id: 'medicine-bow',
@@ -257,6 +464,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 2,
+      clearanceNeeded: 'low_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 4,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Centennial / Laramie, WY',
+      fuelDistanceMilesEstimate: 25,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Medicine Bow NF (US Forest Service)',
+        url: 'https://www.fs.usda.gov/recarea/mbr/recarea/?recid=22858',
+      },
+      'WY'
+    ),
   },
   {
     id: 'vedauwoo',
@@ -318,6 +563,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 1,
+      clearanceNeeded: 'none',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 4,
+      nearestTown: 'Laramie, WY',
+      fuelDistanceMilesEstimate: 18,
+      waterAvailability: 'limited',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('high', 'Easy, well-signed access just off I-80; access is well documented.'),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Vedauwoo (Medicine Bow-Routt NF)',
+        url: 'https://www.fs.usda.gov/recarea/mbr/recarea/?recid=22860',
+      },
+      'WY'
+    ),
   },
   {
     id: 'flaming-gorge',
@@ -379,6 +662,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 1,
+      clearanceNeeded: 'none',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Manila / Dutch John, UT',
+      fuelDistanceMilesEstimate: 10,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Flaming Gorge NRA (Ashley NF)',
+        url: 'https://www.fs.usda.gov/recarea/ashley/recarea/?recid=72314',
+      },
+      'UT'
+    ),
   },
   {
     id: 'moab-area',
@@ -440,6 +761,41 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'mixed',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 3,
+      clearanceNeeded: 'moderate_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 2,
+    },
+    legality: {
+      dispersedCampingAllowed: 'unknown',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: true,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Moab, UT',
+      fuelDistanceMilesEstimate: 15,
+      waterAvailability: 'limited',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legalityComplex),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      { label: 'Moab BLM Field Office', url: 'https://www.blm.gov/visit/moab' },
+      'UT'
+    ),
   },
   {
     id: 'san-rafael-swell',
@@ -501,6 +857,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'blm',
+    sensitiveLocationLevel: 'fragile',
+    roadAccess: {
+      accessRoadDifficulty: 4,
+      clearanceNeeded: 'high_clearance',
+      fourWheelDriveRequired: true,
+      trailerFriendly: false,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 1,
+      nearestTown: 'Green River / Hanksville, UT',
+      fuelDistanceMilesEstimate: 30,
+      waterAvailability: 'none',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('low', NOTE.accessRemote),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'San Rafael Swell (BLM)',
+        url: 'https://www.blm.gov/visit/san-rafael-swell',
+      },
+      'UT'
+    ),
   },
   {
     id: 'capitol-reef-area',
@@ -562,6 +956,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'mixed',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 3,
+      clearanceNeeded: 'moderate_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'unknown',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: true,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 2,
+      nearestTown: 'Torrey, UT',
+      fuelDistanceMilesEstimate: 20,
+      waterAvailability: 'limited',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legalityComplex),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Capitol Reef National Park (NPS)',
+        url: 'https://www.nps.gov/care/index.htm',
+      },
+      'UT'
+    ),
   },
   {
     id: 'uncompahgre-plateau',
@@ -623,6 +1055,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 3,
+      clearanceNeeded: 'moderate_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: false,
+      winterAccessRisk: 5,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 2,
+      nearestTown: 'Montrose / Delta, CO',
+      fuelDistanceMilesEstimate: 30,
+      waterAvailability: 'limited',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Uncompahgre NF (US Forest Service)',
+        url: 'https://www.fs.usda.gov/recarea/gmug/recarea/?recid=32920',
+      },
+      'CO'
+    ),
   },
   {
     id: 'arkansas-river-valley',
@@ -684,6 +1154,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'mixed',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 1,
+      clearanceNeeded: 'none',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 2,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 4,
+      nearestTown: 'Buena Vista / Salida, CO',
+      fuelDistanceMilesEstimate: 10,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legalityComplex),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Browns Canyon National Monument (BLM)',
+        url: 'https://www.blm.gov/visit/browns-canyon-national-monument',
+      },
+      'CO'
+    ),
   },
   {
     id: 'buena-vista-fourmile',
@@ -745,6 +1253,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 3,
+      clearanceNeeded: 'moderate_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: false,
+      winterAccessRisk: 4,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Buena Vista, CO',
+      fuelDistanceMilesEstimate: 12,
+      waterAvailability: 'seasonal',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Fourmile Travel Management Area (San Isabel NF)',
+        url: 'https://www.fs.usda.gov/detail/psicc/recreation/?cid=stelprdb5167509',
+      },
+      'CO'
+    ),
   },
   {
     id: 'walden-north-park',
@@ -806,6 +1352,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'mixed',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 2,
+      clearanceNeeded: 'low_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 4,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 2,
+      nearestTown: 'Walden, CO',
+      fuelDistanceMilesEstimate: 20,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legalityComplex),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'State Forest State Park (CPW)',
+        url: 'https://cpw.state.co.us/placestogo/parks/StateForest',
+      },
+      'CO'
+    ),
   },
   {
     id: 'snowy-range',
@@ -867,6 +1451,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 2,
+      clearanceNeeded: 'low_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 5,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Centennial / Saratoga, WY',
+      fuelDistanceMilesEstimate: 25,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', 'Snowy Range Scenic Byway is gated by snow most of the year; ' + NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Snowy Range (Medicine Bow NF)',
+        url: 'https://www.fs.usda.gov/recarea/mbr/recarea/?recid=22758',
+      },
+      'WY'
+    ),
   },
   {
     id: 'poudre-canyon',
@@ -928,6 +1550,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 2,
+      clearanceNeeded: 'none',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Fort Collins, CO',
+      fuelDistanceMilesEstimate: 25,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Poudre Canyon (Roosevelt NF)',
+        url: 'https://www.fs.usda.gov/recarea/arp/recarea/?recid=80800',
+      },
+      'CO'
+    ),
   },
   {
     id: 'gunnison-hartman',
@@ -989,6 +1649,47 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'blm',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 2,
+      clearanceNeeded: 'low_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 4,
+      nearestTown: 'Gunnison, CO',
+      fuelDistanceMilesEstimate: 8,
+      waterAvailability: 'limited',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: [
+      {
+        label: 'Hartman Rocks (Gunnison Trails / BLM area)',
+        url: 'https://gunnisontrails.org/hartman-rocks/',
+        type: 'reference',
+        category: 'land_manager',
+      },
+      WEATHER_LINK,
+      ROAD_LINK.CO,
+    ],
   },
   {
     id: 'rabbit-valley',
@@ -1050,6 +1751,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'blm',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 3,
+      clearanceNeeded: 'moderate_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 2,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Fruita / Mack, CO',
+      fuelDistanceMilesEstimate: 15,
+      waterAvailability: 'none',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'McInnis Canyons NCA (BLM)',
+        url: 'https://www.blm.gov/visit/mcinnis-canyons',
+      },
+      'CO'
+    ),
   },
   {
     id: 'dinosaur-browns-park',
@@ -1111,6 +1850,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'mixed',
+    sensitiveLocationLevel: 'fragile',
+    roadAccess: {
+      accessRoadDifficulty: 3,
+      clearanceNeeded: 'moderate_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: false,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'unknown',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: true,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 1,
+      nearestTown: 'Maybell, CO / Vernal, UT',
+      fuelDistanceMilesEstimate: 45,
+      waterAvailability: 'seasonal',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('low', NOTE.accessRemote),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legalityComplex),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED_STALE,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Dinosaur National Monument (NPS)',
+        url: 'https://www.nps.gov/dino/index.htm',
+      },
+      'UT'
+    ),
   },
   {
     id: 'manti-la-sal',
@@ -1172,6 +1949,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 3,
+      clearanceNeeded: 'moderate_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: false,
+      winterAccessRisk: 5,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 2,
+      nearestTown: 'Moab / Monticello, UT',
+      fuelDistanceMilesEstimate: 25,
+      waterAvailability: 'seasonal',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Manti-La Sal NF (US Forest Service)',
+        url: 'https://www.fs.usda.gov/mantilasal',
+      },
+      'UT'
+    ),
   },
   {
     id: 'fishlake-national-forest',
@@ -1233,6 +2048,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 2,
+      clearanceNeeded: 'low_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 4,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Loa / Richfield, UT',
+      fuelDistanceMilesEstimate: 25,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Fishlake NF (US Forest Service)',
+        url: 'https://www.fs.usda.gov/fishlake',
+      },
+      'UT'
+    ),
   },
   {
     id: 'uinta-mountains',
@@ -1294,6 +2147,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'fragile',
+    roadAccess: {
+      accessRoadDifficulty: 3,
+      clearanceNeeded: 'moderate_clearance',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 5,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 2,
+      nearestTown: 'Kamas, UT / Evanston, WY',
+      fuelDistanceMilesEstimate: 35,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Uinta-Wasatch-Cache NF (US Forest Service)',
+        url: 'https://www.fs.usda.gov/uwcnf',
+      },
+      'UT'
+    ),
   },
   {
     id: 'red-feather-lakes',
@@ -1355,6 +2246,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'usfs',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 1,
+      clearanceNeeded: 'none',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Red Feather Lakes / Livermore, CO',
+      fuelDistanceMilesEstimate: 12,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('high', 'Paved/maintained access to a long-established recreation area; access is well documented.'),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legality),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Red Feather Lakes (Roosevelt NF)',
+        url: 'https://www.fs.usda.gov/recarea/arp/recarea/?recid=36727',
+      },
+      'CO'
+    ),
   },
   {
     id: 'south-park-eleven-mile',
@@ -1416,6 +2345,44 @@ const tripZones: TripZone[] = [
       },
     ],
     dataConfidence: 'medium',
+    landManager: 'mixed',
+    sensitiveLocationLevel: 'generalized',
+    roadAccess: {
+      accessRoadDifficulty: 1,
+      clearanceNeeded: 'none',
+      fourWheelDriveRequired: false,
+      trailerFriendly: true,
+      winterAccessRisk: 3,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'unknown',
+    },
+    remoteness: {
+      cellServiceLikelihood: 3,
+      nearestTown: 'Lake George / Hartsel, CO',
+      fuelDistanceMilesEstimate: 18,
+      waterAvailability: 'reliable',
+    },
+    dataQuality: {
+      overall: cat('medium', NOTE.overall),
+      access: cat('medium', NOTE.access),
+      camping: cat('medium', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('medium', NOTE.legalityComplex),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Eleven Mile State Park (CPW)',
+        url: 'https://cpw.state.co.us/placestogo/parks/ElevenMile',
+      },
+      'CO'
+    ),
   },
   {
     id: 'book-cliffs',
@@ -1476,7 +2443,45 @@ const tripZones: TripZone[] = [
         type: 'official',
       },
     ],
-    dataConfidence: 'medium',
+    dataConfidence: 'low',
+    landManager: 'blm',
+    sensitiveLocationLevel: 'fragile',
+    roadAccess: {
+      accessRoadDifficulty: 5,
+      clearanceNeeded: 'high_clearance',
+      fourWheelDriveRequired: true,
+      trailerFriendly: false,
+      winterAccessRisk: 4,
+    },
+    legality: {
+      dispersedCampingAllowed: 'yes',
+      campfireRestrictionsCommon: true,
+      permitLikelyRequired: false,
+      ohvLegal: 'area_specific',
+      platedVehicleRequired: 'area_specific',
+    },
+    remoteness: {
+      cellServiceLikelihood: 1,
+      nearestTown: 'Thompson Springs / Grand Junction',
+      fuelDistanceMilesEstimate: 50,
+      waterAvailability: 'none',
+    },
+    dataQuality: {
+      overall: cat('low', 'Extremely remote and lightly documented — treat all details as rough planning notes only.'),
+      access: cat('low', NOTE.accessRemote),
+      camping: cat('low', NOTE.camping),
+      activities: cat('medium', NOTE.activities),
+      legality: cat('low', NOTE.legalityComplex),
+      seasonality: cat('medium', NOTE.seasonality),
+      lastReviewedAt: REVIEWED_STALE,
+    },
+    verificationLinks: verify(
+      {
+        label: 'Book Cliffs (BLM Utah)',
+        url: 'https://www.blm.gov/programs/national-conservation-lands/utah/book-cliffs',
+      },
+      'UT'
+    ),
   },
 ];
 
