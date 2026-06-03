@@ -306,11 +306,39 @@ function computePenalties(prefs: TripPreferences, trip: TripZone): number {
     penalty -= prefs.crowdTolerance === 4 ? 14 : 9;
   }
 
-  // Data confidence.
-  if (trip.dataConfidence === "low") penalty -= 6;
-  else if (trip.dataConfidence === "medium") penalty -= 2;
+  // Data quality. Penalize low confidence so well-verified zones rank above
+  // shakier ones, weighting legality (permits/fire/OHV legality) most heavily
+  // since getting that wrong has real consequences. Categories are distinct,
+  // so the small stack here is intentional, not double-counting.
+  penalty += dataQualityPenalty(trip);
 
   return penalty;
+}
+
+/**
+ * Confidence-based penalty drawn from the structured data-quality model.
+ * Medium confidence is only lightly docked; low confidence — especially on
+ * legality — is docked more. Falls back to the legacy `dataConfidence` field
+ * if a zone somehow lacks the structured object.
+ */
+function dataQualityPenalty(trip: TripZone): number {
+  const dq = trip.dataQuality;
+  if (!dq) {
+    if (trip.dataConfidence === "low") return -6;
+    if (trip.dataConfidence === "medium") return -2;
+    return 0;
+  }
+
+  let p = 0;
+  if (dq.overall.level === "low") p -= 6;
+  else if (dq.overall.level === "medium") p -= 2;
+
+  if (dq.legality.level === "low") p -= 8;
+  else if (dq.legality.level === "medium") p -= 3;
+
+  if (dq.access.level === "low") p -= 5;
+
+  return p;
 }
 
 function computeHiddenGemBoost(prefs: TripPreferences, trip: TripZone): number {
@@ -525,9 +553,14 @@ export function explainMatch(
   if (prefs.crowdTolerance >= 3 && trip.crowdLevel >= 4)
     whyItMightNot.push("Can get crowded — counter to your preference for quiet.");
 
-  if (trip.dataConfidence !== "high")
+  const overallLevel = trip.dataQuality?.overall.level ?? trip.dataConfidence;
+  if (overallLevel !== "high")
     whyItMightNot.push(
-      `Data confidence is ${trip.dataConfidence} — verify details before you commit.`
+      `Data confidence is ${overallLevel} — verify details before you commit.`
+    );
+  if (trip.dataQuality && trip.dataQuality.legality.level === "low")
+    whyItMightNot.push(
+      "Rules (permits, fire, OHV) are low-confidence here — confirm with the land manager."
     );
 
   if (whyItMatches.length === 0)
