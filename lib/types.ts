@@ -207,7 +207,15 @@ export type ScoreBreakdown = {
   vibeFit: number;
   gearFit: number;
   seasonFit: number;
+  /** How well the trip's overall riskiness matches the user's risk tolerance. */
+  riskFit: number;
   penalties: number;
+  /**
+   * Extra safety guardrail deduction applied when a lower-risk user is matched
+   * to a trip carrying specific hazards (rough access, winter risk, weak cell,
+   * legality uncertainty). Shown separately from `penalties` for transparency.
+   */
+  riskPenalty: number;
   hiddenGemBoost: number;
   finalScore: number;
 };

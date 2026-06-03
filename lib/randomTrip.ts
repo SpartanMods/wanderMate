@@ -5,6 +5,7 @@
  * pick is surprising but still relevant.
  */
 
+import { SCORE_WEIGHTS } from "./constants";
 import { getEffectiveDriveHours } from "./geo";
 import {
   calculateTripScore,
@@ -34,8 +35,9 @@ function buildRecommendation(
 
 /**
  * Selection weight blends:
- *   - match score        50%
- *   - hidden-gem score   25%
+ *   - match score        40%
+ *   - hidden-gem score   20%
+ *   - risk fit           15%
  *   - lower popularity   15%
  *   - region novelty     10%
  */
@@ -43,12 +45,24 @@ function selectionWeight(
   rec: TripRecommendation,
   usedRegions: Set<string>
 ): number {
-  const matchComponent = (rec.score / 100) * 0.5;
-  const gemComponent = (rec.trip.hiddenGemScore / 5) * 0.25;
+  const matchComponent = (rec.score / 100) * 0.4;
+  const gemComponent = (rec.trip.hiddenGemScore / 5) * 0.2;
+  const riskComponent = (rec.breakdown.riskFit / SCORE_WEIGHTS.riskFit) * 0.15;
   const popComponent = ((6 - rec.trip.popularityScore) / 5) * 0.15;
   const novelty = usedRegions.has(rec.trip.region) ? 0 : 0.1;
   // Keep strictly positive so every eligible trip has a chance.
-  return Math.max(0.01, matchComponent + gemComponent + popComponent + novelty);
+  return Math.max(
+    0.01,
+    matchComponent + gemComponent + riskComponent + popComponent + novelty
+  );
+}
+
+/** A trip is "risk-safe" when it fits the user's tolerance and isn't guardrailed. */
+function isRiskSafe(rec: TripRecommendation): boolean {
+  return (
+    rec.breakdown.riskFit >= SCORE_WEIGHTS.riskFit * 0.5 &&
+    rec.breakdown.riskPenalty >= -4
+  );
 }
 
 function weightedPick(
@@ -82,6 +96,15 @@ export function getRandomTripRecommendation(
   // 3-4. Keep score >= 70, relax to >= 60 if too few remain.
   let pool = eligible.filter((r) => r.score >= 70);
   if (pool.length < 3) pool = eligible.filter((r) => r.score >= 60);
+
+  // Respect risk tolerance: lower-risk users (1-2) shouldn't be randomly handed
+  // extreme/high-risk trips while calmer options exist. Only narrow to the
+  // risk-safe subset when there are still enough of them to keep it interesting.
+  if (preferences.riskTolerance <= 2) {
+    const safe = pool.filter(isRiskSafe);
+    if (safe.length >= 3) pool = safe;
+  }
+
   if (pool.length === 0) {
     // Last resort: take the best available so we always return something.
     pool = [...eligible].sort((a, b) => b.score - a.score).slice(0, 5);

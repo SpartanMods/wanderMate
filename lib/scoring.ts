@@ -11,6 +11,7 @@ import {
   ACTIVITY_LABELS,
   ACTIVITY_WEIGHT_MULTIPLIER,
   CAMPING_LABELS,
+  RISK_LABELS,
   SCORE_WEIGHTS,
   SKILL_RANK,
   VEHICLE_LABELS,
@@ -37,6 +38,100 @@ function userVehicleRank(
 ): number {
   if (vehicle === "not_sure") return 2; // ~SUV, but we dampen hard access below
   return VEHICLE_RANK[vehicle as VehicleRequirement];
+}
+
+// ---------------------------------------------------------------------------
+// Shared capability / context helpers used across scorers, guardrails, and
+// explanations. Keeping them in one place keeps the risk model consistent.
+// ---------------------------------------------------------------------------
+
+/** Trip skill rank minus user skill rank. + = trip is harder than the user. */
+function skillGap(prefs: TripPreferences, trip: TripZone): number {
+  return SKILL_RANK[trip.skillLevel] - SKILL_RANK[prefs.experienceLevel];
+}
+
+/** Trip vehicle rank minus user vehicle rank. + = trip needs more capability. */
+function vehicleGap(prefs: TripPreferences, trip: TripZone): number {
+  return (
+    VEHICLE_RANK[trip.vehicleRequirement] -
+    userVehicleRank(prefs.vehicleCapability)
+  );
+}
+
+/** Does the planned trip fall in winter (by start date), if a date was given? */
+function isWinterContext(prefs: TripPreferences): boolean {
+  return inferSeason(prefs.startDate) === "winter";
+}
+
+/** True when the structured data quality (or legacy field) reads "low" overall. */
+function isOverallDataLow(trip: TripZone): boolean {
+  if (trip.dataQuality) return trip.dataQuality.overall.level === "low";
+  return trip.dataConfidence === "low";
+}
+
+/**
+ * A 0..1 index of how risky/adventurous a trip is, blending off-grid level,
+ * skill, vehicle demand, road difficulty, winter access (only when relevant),
+ * cell-service likelihood, legality uncertainty, and data confidence. New
+ * structured fields are used when present and degrade gracefully without them.
+ */
+function tripRiskIndex(prefs: TripPreferences, trip: TripZone): number {
+  const parts: Array<{ value: number; weight: number }> = [];
+  const add = (value: number, weight: number) =>
+    parts.push({ value: clamp(value, 0, 1), weight });
+
+  // Remoteness / off-grid (1-4).
+  add((trip.offGridLevel - 1) / 3, 1.2);
+  // Skill demand (1-4).
+  add((SKILL_RANK[trip.skillLevel] - 1) / 3, 1);
+  // Vehicle demand (1-4).
+  add((VEHICLE_RANK[trip.vehicleRequirement] - 1) / 3, 1);
+
+  const ra = trip.roadAccess;
+  if (ra) {
+    add((ra.accessRoadDifficulty - 1) / 4, 1.1);
+    if (isWinterContext(prefs)) add((ra.winterAccessRisk - 1) / 4, 1);
+  }
+
+  const rm = trip.remoteness;
+  if (rm) {
+    // Low cell service = higher risk.
+    add((5 - rm.cellServiceLikelihood) / 4, 0.8);
+  }
+
+  const lg = trip.legality;
+  if (lg) {
+    let legalUncertainty = 0;
+    if (lg.ohvLegal === "unknown") legalUncertainty += 0.5;
+    else if (lg.ohvLegal === "area_specific") legalUncertainty += 0.2;
+    if (lg.dispersedCampingAllowed === "unknown") legalUncertainty += 0.3;
+    if (lg.permitLikelyRequired) legalUncertainty += 0.2;
+    add(legalUncertainty, 0.7);
+  }
+
+  if (trip.dataQuality) {
+    const lvl = (l: "high" | "medium" | "low") =>
+      l === "low" ? 1 : l === "medium" ? 0.4 : 0;
+    add(
+      (lvl(trip.dataQuality.overall.level) +
+        lvl(trip.dataQuality.access.level)) /
+        2,
+      0.8
+    );
+  }
+
+  const totalWeight = parts.reduce((s, p) => s + p.weight, 0);
+  if (totalWeight === 0) return 0.5;
+  return clamp(
+    parts.reduce((s, p) => s + p.value * p.weight, 0) / totalWeight,
+    0,
+    1
+  );
+}
+
+/** User's risk comfort on a 0..1 scale (tolerance 1->0, 4->1). */
+function userRiskComfort(prefs: TripPreferences): number {
+  return (prefs.riskTolerance - 1) / 3;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,24 +175,49 @@ function scoreDriveTime(prefs: TripPreferences, trip: TripZone): number {
 }
 
 function scoreSkill(prefs: TripPreferences, trip: TripZone): number {
-  const userRank = SKILL_RANK[prefs.experienceLevel];
-  const tripRank = SKILL_RANK[trip.skillLevel];
-  const diff = tripRank - userRank; // + = trip harder than user
+  const diff = skillGap(prefs, trip); // + = trip harder than user
   const w = SCORE_WEIGHTS.skillFit;
   if (diff === 0) return w;
   if (diff === -1) return w * 0.85;
-  if (diff <= -2) return w * 0.6; // overqualified / too easy
-  if (diff === 1) return w * 0.5; // one level harder, possible
+  if (diff <= -2) return w * 0.7; // overqualified — fine if activities match
+  if (diff === 1) {
+    // One level harder. A beginner can step up to an intermediate trip when
+    // access is genuinely easy; otherwise it stays a meaningful stretch.
+    const ra = trip.roadAccess;
+    const easyAccess =
+      !!ra && ra.accessRoadDifficulty <= 2 && !ra.fourWheelDriveRequired;
+    return easyAccess && prefs.riskTolerance <= 2 ? w * 0.65 : w * 0.5;
+  }
   return 0; // two+ harder
 }
 
 function scoreOffGrid(prefs: TripPreferences, trip: TripZone): number {
   const diff = Math.abs(trip.offGridLevel - prefs.offGridPreference);
   const w = SCORE_WEIGHTS.offGridFit;
-  if (diff === 0) return w;
-  if (diff === 1) return w * 0.65;
-  if (diff === 2) return w * 0.3;
-  return w * 0.1;
+  let score = diff === 0 ? w : diff === 1 ? w * 0.65 : diff === 2 ? w * 0.3 : w * 0.1;
+
+  const lowRisk = prefs.riskTolerance <= 2;
+  const highRisk = prefs.riskTolerance >= 3;
+  const cell = trip.remoteness?.cellServiceLikelihood;
+  const remote = trip.offGridLevel >= 3;
+
+  // Low-risk users: dock remoteness that comes with poor cell service.
+  if (lowRisk && remote && cell != null && cell <= 2) {
+    score *= 0.7;
+  }
+
+  // High-risk users: only *reward* remoteness when they can actually handle it
+  // (vehicle + skill in range and data confidence not low). Otherwise the
+  // remoteness is a liability, not a perk.
+  if (highRisk && remote) {
+    const capable =
+      vehicleGap(prefs, trip) <= 0 &&
+      skillGap(prefs, trip) <= 0 &&
+      !isOverallDataLow(trip);
+    score = capable ? Math.min(w, score + w * 0.12) : score * 0.85;
+  }
+
+  return clamp(score, 0, w);
 }
 
 function userIdealCrowd(tolerance: number): number {
@@ -113,15 +233,25 @@ function scoreCrowd(prefs: TripPreferences, trip: TripZone): number {
 
 function scoreVehicle(prefs: TripPreferences, trip: TripZone): number {
   const userRank = userVehicleRank(prefs.vehicleCapability);
-  const tripRank = VEHICLE_RANK[trip.vehicleRequirement];
-  const gap = tripRank - userRank; // + = trip needs more capability
+  const gap = vehicleGap(prefs, trip); // + = trip needs more capability
   const w = SCORE_WEIGHTS.vehicleFit;
-  if (gap <= 0) {
-    // Capable enough. Slightly dock heavy rigs on very easy trips? Keep full.
-    return w;
+  let score = gap <= 0 ? w : gap === 1 ? w * 0.4 : 0;
+
+  // Road-access modifiers (independent of the coarse vehicle rank, and kept
+  // separate from OHV legality, which is about *riding*, not *access*).
+  const ra = trip.roadAccess;
+  if (ra) {
+    // Needs real 4WD but the user is below truck capability.
+    if (ra.fourWheelDriveRequired && userRank < VEHICLE_RANK.truck) {
+      score = Math.min(score, w * 0.2);
+    }
+    // Genuinely rough road and the user is in a car/SUV — penalize heavily.
+    if (ra.accessRoadDifficulty >= 4 && userRank <= VEHICLE_RANK.suv) {
+      score = Math.min(score, w * 0.15);
+    }
   }
-  if (gap === 1) return w * 0.4;
-  return 0;
+
+  return clamp(score, 0, w);
 }
 
 function scoreCamping(prefs: TripPreferences, trip: TripZone): number {
@@ -185,6 +315,78 @@ function scoreSeason(prefs: TripPreferences, trip: TripZone): number {
   const season = inferSeason(prefs.startDate);
   if (!season) return w * 0.6; // no date given -> neutral
   return trip.bestSeasons.includes(season) ? w : w * 0.25;
+}
+
+/**
+ * Risk fit: how well the trip's overall riskiness lines up with the user's
+ * risk tolerance.
+ *  - Within comfort (trip risk <= tolerance): full credit, with only a small
+ *    dock if a trip is far *below* what a high-adventure user wanted.
+ *  - Above comfort (trip riskier than tolerance): scaled down by the overshoot.
+ *  - For high-risk users, remote/rough trips only earn full credit when the
+ *    user can actually handle them (vehicle + skill in range); a capability
+ *    mismatch means the "adventure" isn't a good fit.
+ */
+function scoreRiskFit(prefs: TripPreferences, trip: TripZone): number {
+  const w = SCORE_WEIGHTS.riskFit;
+  const risk = tripRiskIndex(prefs, trip);
+  const comfort = userRiskComfort(prefs);
+  const diff = risk - comfort; // + = trip riskier than the user wants
+
+  let fraction: number;
+  if (diff <= 0) {
+    // Within comfort. Mild dock if a thrill-seeker drew a very tame trip.
+    fraction = 1 - 0.15 * Math.min(1, -diff);
+  } else {
+    // Over comfort: each unit of overshoot bites hard.
+    fraction = clamp(1 - diff * 1.6, 0, 1);
+  }
+
+  // High-adventure users shouldn't get full risk credit for trips they can't
+  // safely take on (under-vehicled / under-skilled).
+  if (prefs.riskTolerance >= 3) {
+    const mismatch = Math.max(
+      0,
+      vehicleGap(prefs, trip),
+      skillGap(prefs, trip)
+    );
+    if (mismatch >= 1) fraction = Math.min(fraction, mismatch >= 2 ? 0.35 : 0.6);
+  }
+
+  return clamp(w * fraction, 0, w);
+}
+
+/**
+ * Extra safety guardrail: a visible deduction (separate from `penalties`) when
+ * a lower-risk user (tolerance 1-2) is matched with a trip carrying concrete
+ * hazards. Kept modest and capped so it nudges ranking toward safer trips
+ * without burying every adventurous option.
+ */
+function computeRiskPenalty(prefs: TripPreferences, trip: TripZone): number {
+  if (prefs.riskTolerance >= 3) return 0; // adventurous users opted in
+
+  const low = prefs.riskTolerance === 1;
+  let penalty = 0;
+
+  // Winter access risk on a winter trip.
+  const ra = trip.roadAccess;
+  if (ra && isWinterContext(prefs) && ra.winterAccessRisk >= 4) {
+    penalty -= low ? 6 : 3;
+  }
+
+  // Weak cell service in a remote zone.
+  const cell = trip.remoteness?.cellServiceLikelihood;
+  if (cell != null && cell <= 2 && trip.offGridLevel >= 3) {
+    penalty -= low ? 5 : 2;
+  }
+
+  // Legality uncertainty the user can't easily resolve.
+  if (trip.legality?.ohvLegal === "unknown") penalty -= low ? 4 : 2;
+
+  // Deep backcountry for someone who wanted easy access.
+  if (low && trip.offGridLevel >= 3) penalty -= 3;
+
+  return Math.max(-15, penalty);
 }
 
 // ---------------------------------------------------------------------------
@@ -266,6 +468,44 @@ export function getMissingMustHaves(
   return missing;
 }
 
+/**
+ * Must-have activities that are present-but-weak (rating exactly 2). These are
+ * meaningfully under-delivered without being fully "missing" (<= 1), so they
+ * earn a moderate penalty rather than the full missing-must-have hit.
+ */
+export function getWeakMustHaves(
+  prefs: TripPreferences,
+  trip: TripZone
+): ActivityKey[] {
+  const weak: ActivityKey[] = [];
+  for (const [key, weight] of Object.entries(prefs.selectedActivities) as [
+    ActivityKey,
+    string
+  ][]) {
+    if (weight === "must_have" && (trip.activities[key] ?? 0) === 2) {
+      weak.push(key);
+    }
+  }
+  return weak;
+}
+
+/** Must-have activities the trip strongly satisfies (rating 4 or 5). */
+export function getStrongMustHaves(
+  prefs: TripPreferences,
+  trip: TripZone
+): ActivityKey[] {
+  const strong: ActivityKey[] = [];
+  for (const [key, weight] of Object.entries(prefs.selectedActivities) as [
+    ActivityKey,
+    string
+  ][]) {
+    if (weight === "must_have" && (trip.activities[key] ?? 0) >= 4) {
+      strong.push(key);
+    }
+  }
+  return strong;
+}
+
 // ---------------------------------------------------------------------------
 // Penalties + hidden-gem boost
 // ---------------------------------------------------------------------------
@@ -279,10 +519,39 @@ function computePenalties(prefs: TripPreferences, trip: TripZone): number {
     penalty -= Math.min(40, conflicts.length * 15);
   }
 
-  // Missing must-have activities: -20 each, capped at -45.
+  // Missing must-have activities (rating <= 1): -20 each, capped at -45.
   const missing = getMissingMustHaves(prefs, trip);
   if (missing.length > 0) {
     penalty -= Math.min(45, missing.length * 20);
+  }
+
+  // Present-but-weak must-haves (rating 2): -8 each.
+  const weak = getWeakMustHaves(prefs, trip);
+  if (weak.length > 0) {
+    penalty -= weak.length * 8;
+  }
+
+  // Multiple under-delivered must-haves (missing + weak) compound: extra -8.
+  if (missing.length + weak.length >= 2) {
+    penalty -= 8;
+  }
+
+  // Rough access vs. an under-capable vehicle. This stacks intentionally with
+  // the reduced vehicle sub-score to make genuinely hard access "heavy".
+  const ra = trip.roadAccess;
+  const userVRank = userVehicleRank(prefs.vehicleCapability);
+  if (ra) {
+    if (ra.accessRoadDifficulty >= 4 && userVRank <= VEHICLE_RANK.suv) {
+      penalty -= 10;
+    }
+    if (
+      ra.fourWheelDriveRequired &&
+      userVRank < VEHICLE_RANK.truck &&
+      ra.accessRoadDifficulty < 4
+    ) {
+      // Avoid double-dipping with the rough-road penalty above.
+      penalty -= 8;
+    }
   }
 
   // Drive slightly over max.
@@ -349,27 +618,45 @@ function computeHiddenGemBoost(prefs: TripPreferences, trip: TripZone): number {
   );
   const eligible = quietPref || remotePref || adventurousVibe;
 
-  let boost = 0;
+  // --- Positive discovery boost ---
   const gem = trip.hiddenGemScore;
+  let gemBoost = 0;
   if (eligible) {
-    if (gem === 5) boost += 9;
-    else if (gem === 4) boost += 6;
-    else if (gem === 3) boost += 3;
+    if (gem === 5) gemBoost = 9;
+    else if (gem === 4) gemBoost = 6;
+    else if (gem === 3) gemBoost = 3;
   } else {
-    // Mild discovery value even for crowd-tolerant users.
-    if (gem === 5) boost += 3;
-    else if (gem === 4) boost += 2;
+    if (gem === 5) gemBoost = 3;
+    else if (gem === 4) gemBoost = 2;
   }
 
-  // Popularity dampening when the user wants quiet / off-grid.
+  // A hidden gem is no bargain if you can't safely get there or handle it.
+  // Don't let discovery value paper over a severe vehicle or skill mismatch.
+  if (vehicleGap(prefs, trip) >= 2 || skillGap(prefs, trip) >= 2) {
+    gemBoost = 0;
+  }
+
+  // Bound the boost by data and legality confidence — we shouldn't hype a
+  // poorly-verified "gem".
+  if (trip.dataQuality) {
+    if (trip.dataQuality.overall.level === "low") gemBoost *= 0.4;
+    else if (trip.dataQuality.overall.level === "medium") gemBoost *= 0.85;
+    if (trip.dataQuality.legality.level === "low") gemBoost *= 0.6;
+  } else if (trip.dataConfidence === "low") {
+    gemBoost *= 0.4;
+  }
+
+  // --- Popularity dampening (when the user wants quiet / off-grid) ---
+  let popAdj = 0;
   if (quietPref || remotePref) {
     const pop = trip.popularityScore;
-    if (pop === 5) boost -= 10;
-    else if (pop === 4) boost -= 5;
-    else if (pop <= 2) boost += 2;
+    const hard = prefs.crowdTolerance === 4; // strongest crowd aversion
+    if (pop === 5) popAdj = hard ? -14 : -10;
+    else if (pop === 4) popAdj = hard ? -8 : -5;
+    else if (pop <= 2) popAdj = 2;
   }
 
-  return boost;
+  return Math.round((gemBoost + popAdj) * 10) / 10;
 }
 
 // ---------------------------------------------------------------------------
@@ -390,7 +677,9 @@ export function calculateTripScore(
   const vibeFit = scoreVibe(prefs, trip);
   const gearFit = scoreGear(prefs, trip);
   const seasonFit = scoreSeason(prefs, trip);
+  const riskFit = scoreRiskFit(prefs, trip);
   const penalties = computePenalties(prefs, trip);
+  const riskPenalty = computeRiskPenalty(prefs, trip);
   const hiddenGemBoost = computeHiddenGemBoost(prefs, trip);
 
   const base =
@@ -403,10 +692,11 @@ export function calculateTripScore(
     campingFit +
     vibeFit +
     gearFit +
-    seasonFit;
+    seasonFit +
+    riskFit;
 
   const finalScore = clamp(
-    Math.round(base + penalties + hiddenGemBoost),
+    Math.round(base + penalties + riskPenalty + hiddenGemBoost),
     0,
     100
   );
@@ -422,7 +712,9 @@ export function calculateTripScore(
     vibeFit: Math.round(vibeFit * 10) / 10,
     gearFit: Math.round(gearFit * 10) / 10,
     seasonFit: Math.round(seasonFit * 10) / 10,
+    riskFit: Math.round(riskFit * 10) / 10,
     penalties,
+    riskPenalty,
     hiddenGemBoost,
     finalScore,
   };
@@ -454,11 +746,79 @@ export function hasHardConstraintViolation(
   if (SKILL_RANK[trip.skillLevel] - userRank >= 2) return true;
 
   // Severe vehicle mismatch (two+ capability ranks short).
-  const vGap =
-    VEHICLE_RANK[trip.vehicleRequirement] - userVehicleRank(prefs.vehicleCapability);
-  if (vGap >= 2) return true;
+  const userVRank = userVehicleRank(prefs.vehicleCapability);
+  if (vehicleGap(prefs, trip) >= 2) return true;
+
+  // Road-access guardrails for everyone: extreme roads simply aren't reachable
+  // without the right rig, regardless of how the coarse vehicle rank reads.
+  const ra = trip.roadAccess;
+  if (ra) {
+    if (
+      ra.accessRoadDifficulty >= 5 &&
+      userVRank < VEHICLE_RANK.high_clearance_4x4
+    )
+      return true;
+    if (ra.fourWheelDriveRequired && userVRank < VEHICLE_RANK.truck) return true;
+  }
+
+  // Risk guardrails for genuinely low-risk users ("easy access"). We only hard
+  // block when a trip is extreme on *multiple* dimensions — not merely because
+  // it's adventurous.
+  if (prefs.riskTolerance === 1) {
+    // Deep backcountry that is also advanced/expert terrain.
+    if (
+      trip.offGridLevel === 4 &&
+      (trip.skillLevel === "advanced" || trip.skillLevel === "expert")
+    )
+      return true;
+
+    // A must-have activity whose legality is genuinely unknown for a low-risk
+    // user — don't send them somewhere the activity may not even be allowed.
+    if (
+      trip.legality?.ohvLegal === "unknown" &&
+      prefs.selectedActivities.dirtBikingOhv === "must_have"
+    )
+      return true;
+  }
 
   return false;
+}
+
+/**
+ * Concrete, punchy risk concerns for a trip given the user's inputs. Used in
+ * explanations so the "why it might not" list names real hazards.
+ */
+export function getRiskConcerns(
+  prefs: TripPreferences,
+  trip: TripZone
+): string[] {
+  const out: string[] = [];
+  const ra = trip.roadAccess;
+  const rm = trip.remoteness;
+
+  if (vehicleGap(prefs, trip) >= 1 || (ra && ra.fourWheelDriveRequired))
+    out.push(
+      `Vehicle stretch — needs ${VEHICLE_LABELS[trip.vehicleRequirement]}.`
+    );
+  if (ra && ra.accessRoadDifficulty >= 4)
+    out.push(`Rough access road (${ra.accessRoadDifficulty}/5).`);
+  if (ra && isWinterContext(prefs) && ra.winterAccessRisk >= 4)
+    out.push(`Winter access can close (risk ${ra.winterAccessRisk}/5).`);
+  if (rm && rm.cellServiceLikelihood <= 2)
+    out.push(`Little cell service (${rm.cellServiceLikelihood}/5).`);
+  if (trip.offGridLevel >= 3 && prefs.riskTolerance <= 2)
+    out.push("More off-grid than your easy-access preference.");
+  if (trip.legality?.permitLikelyRequired)
+    out.push("A permit is likely required — verify first.");
+  if (
+    trip.legality &&
+    (trip.legality.ohvLegal === "unknown" ||
+      trip.legality.ohvLegal === "area_specific") &&
+    !!prefs.selectedActivities.dirtBikingOhv
+  )
+    out.push("OHV legality is area-specific here — confirm legal routes.");
+
+  return out;
 }
 
 export function explainMatch(
@@ -478,6 +838,15 @@ export function explainMatch(
   if (strongActivities.length > 0) {
     whyItMatches.push(
       `Strong for your activities: ${strongActivities.slice(0, 4).join(", ")}.`
+    );
+  }
+
+  const strongMust = getStrongMustHaves(prefs, trip);
+  if (strongMust.length >= 2) {
+    whyItMatches.push(
+      `Nails ${strongMust.length} must-haves: ${strongMust
+        .map((m) => ACTIVITY_LABELS[m])
+        .join(", ")}.`
     );
   }
 
@@ -511,6 +880,26 @@ export function explainMatch(
     whyItMatches.push(
       `Reachable with your vehicle (needs ${VEHICLE_LABELS[trip.vehicleRequirement]}).`
     );
+  if (prefs.vehicleCapability === "not_sure" && vehicleOk)
+    whyItMatches.push("Access looks easy enough even if you're unsure on vehicle.");
+
+  // Risk fit.
+  const riskLabel = RISK_LABELS[prefs.riskTolerance];
+  if (breakdown.riskFit >= SCORE_WEIGHTS.riskFit * 0.8)
+    whyItMatches.push(`Risk level fits your ${riskLabel} preference.`);
+  if (
+    prefs.riskTolerance >= 3 &&
+    trip.offGridLevel >= 3 &&
+    vehicleGap(prefs, trip) <= 0 &&
+    skillGap(prefs, trip) <= 0
+  )
+    whyItMatches.push("Remote and rugged — and within your vehicle & skill range.");
+
+  // Hidden-gem boost explanation.
+  if (breakdown.hiddenGemBoost > 0 && trip.hiddenGemScore >= 4)
+    whyItMatches.push(
+      `Hidden-gem boost applied (gem ${trip.hiddenGemScore}/5, popularity ${trip.popularityScore}/5).`
+    );
 
   if (
     prefs.campingPreference !== "none" &&
@@ -537,21 +926,31 @@ export function explainMatch(
     whyItMightNot.push("A notch harder than your stated level — plan accordingly.");
   else if (skillDiff >= 2)
     whyItMightNot.push("Significantly harder than your experience level.");
+  else if (skillDiff <= -2)
+    whyItMightNot.push("Likely to feel easy for your level.");
 
   const max = effectiveMaxDrive(prefs.maxDriveTimeHours);
   if (driveHrs > max)
     whyItMightNot.push(`Longer drive than your max (~${driveHrs} hrs).`);
 
-  const vGap =
-    VEHICLE_RANK[trip.vehicleRequirement] -
-    userVehicleRank(prefs.vehicleCapability);
-  if (vGap >= 1)
-    whyItMightNot.push(
-      `Access may exceed your vehicle (needs ${VEHICLE_LABELS[trip.vehicleRequirement]}).`
-    );
-
   if (prefs.crowdTolerance >= 3 && trip.crowdLevel >= 4)
     whyItMightNot.push("Can get crowded — counter to your preference for quiet.");
+
+  // Popularity dampening reason.
+  if (
+    (prefs.crowdTolerance >= 3 || prefs.offGridPreference >= 3) &&
+    trip.popularityScore >= 4
+  )
+    whyItMightNot.push(
+      `Busy headliner (popularity ${trip.popularityScore}/5) — dampened since you want quiet.`
+    );
+
+  // Risk fit + concrete risk concerns. Lead with the headline, then name the
+  // top couple of specifics so the list stays punchy.
+  if (breakdown.riskFit <= SCORE_WEIGHTS.riskFit * 0.4)
+    whyItMightNot.push(`Riskier than your ${riskLabel} comfort.`);
+  for (const c of getRiskConcerns(prefs, trip).slice(0, 4))
+    whyItMightNot.push(c);
 
   const overallLevel = trip.dataQuality?.overall.level ?? trip.dataConfidence;
   if (overallLevel !== "high")

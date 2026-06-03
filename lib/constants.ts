@@ -198,14 +198,23 @@ export const GEAR_OPTIONS: string[] = [
 
 // Base scoring weights. Sum = 100.
 export const SCORE_WEIGHTS = {
-  activityFit: 30,
-  driveTimeFit: 10,
-  skillFit: 12,
-  offGridFit: 12,
-  crowdFit: 8,
-  vehicleFit: 10,
-  campingFit: 6,
+  activityFit: 28,
+  driveTimeFit: 9,
+  skillFit: 11,
+  offGridFit: 10,
+  crowdFit: 7,
+  vehicleFit: 9,
+  campingFit: 5,
   vibeFit: 5,
   gearFit: 3,
   seasonFit: 4,
+  riskFit: 9,
 } as const;
+
+// Short, lower-case labels for risk tolerance, used in explanations.
+export const RISK_LABELS: Record<1 | 2 | 3 | 4, string> = {
+  1: "low-risk",
+  2: "moderate",
+  3: "challenging",
+  4: "high-adventure",
+};

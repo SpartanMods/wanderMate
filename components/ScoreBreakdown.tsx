@@ -6,6 +6,7 @@ const ROWS: { key: keyof typeof SCORE_WEIGHTS; label: string }[] = [
   { key: "activityFit", label: "Activity fit" },
   { key: "skillFit", label: "Skill fit" },
   { key: "offGridFit", label: "Off-grid fit" },
+  { key: "riskFit", label: "Risk fit" },
   { key: "vehicleFit", label: "Vehicle fit" },
   { key: "driveTimeFit", label: "Drive time fit" },
   { key: "crowdFit", label: "Crowd fit" },
@@ -68,6 +69,14 @@ export function ScoreBreakdown({ breakdown }: { breakdown: Breakdown }) {
             <span className="text-rust-300">Penalties</span>
             <span className="tabular-nums text-rust-300">
               {breakdown.penalties}
+            </span>
+          </div>
+        )}
+        {breakdown.riskPenalty !== 0 && (
+          <div className="flex justify-between">
+            <span className="text-rust-300">Risk guardrail</span>
+            <span className="tabular-nums text-rust-300">
+              {breakdown.riskPenalty}
             </span>
           </div>
         )}
