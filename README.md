@@ -34,6 +34,7 @@ Requires Node.js 18.17+ (tested on Node 22).
 ```bash
 npm install
 npm run dev      # start the dev server at http://localhost:3000
+npm run dev:lan  # start the dev server on your local network for phone testing
 ```
 
 Other scripts:
@@ -44,6 +45,8 @@ npm run start      # serve the production build
 npm run lint       # ESLint
 npm run typecheck  # tsc --noEmit
 ```
+
+For phone testing, the `/phone` helper route, and optional Playwright setup, see `docs/mobile-testing.md`.
 
 ## 3. Tech stack
 
