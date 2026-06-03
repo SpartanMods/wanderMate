@@ -145,13 +145,14 @@ legality, and remoteness facts and categorized verification links.
 
 | Dimension | Weight |
 | --- | --- |
-| Activity fit | 30 |
-| Skill fit | 12 |
-| Off-grid fit | 12 |
-| Drive time fit | 10 |
-| Vehicle fit | 10 |
-| Crowd fit | 8 |
-| Camping fit | 6 |
+| Activity fit | 28 |
+| Skill fit | 11 |
+| Off-grid fit | 10 |
+| Drive time fit | 9 |
+| Vehicle fit | 9 |
+| Risk fit | 9 |
+| Crowd fit | 7 |
+| Camping fit | 5 |
 | Vibe fit | 5 |
 | Season fit | 4 |
 | Gear fit | 3 |
@@ -167,8 +168,12 @@ intentionally light so they nudge rather than dominate: overall `low` −6 /
 fire / OHV mistakes carry real consequences), and access `low` −5.
 
 **Hard constraints** (`hasHardConstraintViolation`) *exclude* a trip entirely —
-drive time far over max, a beginner facing an advanced/expert zone, or a severe
-vehicle mismatch (e.g. any-car vs. high-clearance-4x4).
+drive time far over max, a beginner facing an advanced/expert zone, a severe
+vehicle mismatch (e.g. any-car vs. high-clearance-4x4), an extreme road
+(difficulty 5 without a real 4x4, or a 4WD-required road below truck
+capability), and — for genuinely **low-risk** users only — trips that are
+extreme on *multiple* dimensions at once (deep backcountry *and*
+advanced/expert terrain, or a must-have activity whose legality is unknown).
 
 `lib/matching.ts` → `getRecommendations(prefs, trips)` scores every zone, drops
 hard violations, sorts by score, and **diversifies by region**
@@ -190,20 +195,69 @@ When the user **prefers quiet** (crowd tolerance ≥ 3), wants to be **off-grid*
 Crowd-tolerant users still get a *mild* discovery nudge, but famous places aren't
 over-ranked unless they strongly satisfy the user's must-have activities.
 
+**Hidden-gem boosts are bounded by safety and data quality.** A boost is zeroed
+out when there's a severe vehicle or skill mismatch, scaled down when the zone's
+overall data confidence is low (×0.4) or medium (×0.85), and reduced again when
+legality confidence is low (×0.6). Popularity dampening hits harder for users who
+chose the strongest crowd-aversion setting. In short: discovery value can break a
+tie, but it can never paper over a trip you can't safely reach, handle, or trust.
+
+## 7b. Risk-aware scoring
+
+WanderMate treats **risk tolerance** (1 = low-risk/easy access → 4 =
+high-adventure) as a first-class scoring dimension, not just a label.
+
+- **`riskFit` (9 pts)** compares a per-trip *risk index* to the user's comfort.
+  The risk index blends off-grid level, skill demand, vehicle demand, road
+  difficulty, winter-access risk (only when the trip dates fall in winter),
+  cell-service likelihood, legality uncertainty, and data confidence. A trip
+  within the user's comfort earns full credit; a trip riskier than they want is
+  scaled down by the overshoot. High-adventure users only get full credit for
+  remote/rough trips they can actually handle — a vehicle or skill mismatch caps
+  the reward.
+- **`riskPenalty`** is a small, capped, *separately shown* guardrail deduction
+  applied to lower-risk users (tolerance 1–2) when a trip carries concrete
+  hazards: winter access risk on a winter trip, weak cell service in a remote
+  zone, unknown OHV legality, or deep backcountry when they asked for easy
+  access.
+- **Guardrails** (above) hard-block the genuinely unsafe combinations rather than
+  merely docking points.
+
+The net effect:
+
+- **Low-risk preferences** surface accessible, lower-off-grid, better-verified,
+  easier, better-cell-coverage trips, and filter out the extreme ones.
+- **High-adventure preferences** can surface remote, rugged, hidden-gem trips —
+  *provided* vehicle, skill, legality, and data quality line up.
+- Explanations (`explainMatch`) call out **why the risk level fits or doesn't**
+  and name specific concerns (rough access, low cell service, winter access,
+  legality uncertainty, remoteness, vehicle stretch).
+
+> **Risk scoring does not replace verification.** Even a high-adventure trip with
+> a great risk fit still shows the data-quality, sensitive-location, and
+> "verify before you go" notices. Risk fit tunes *ranking*; it never asserts that
+> conditions are currently safe. Always confirm weather, fire, road, permit, OHV,
+> and closure status through the official `verificationLinks` before any trip.
+
 ## 8. How random trip mode works
 
 `lib/randomTrip.ts` → `getRandomTripRecommendation(prefs, trips)`:
 
 1. Score all trips, drop hard-constraint violations.
 2. Keep trips with score ≥ 70; if fewer than three remain, relax to ≥ 60.
-3. Compute a selection weight blending **match score (50%)**, **hidden-gem score
-   (25%)**, **lower popularity (15%)**, and **region novelty (10%)**.
-4. Weighted-random pick one **primary** trip.
-5. Pick **two backups**, preferring different regions.
-6. Return an explanation of why the trip was selected.
+3. **Respect risk tolerance:** for lower-risk users (tolerance 1–2), narrow to
+   the *risk-safe* subset (good `riskFit`, no meaningful `riskPenalty`) as long
+   as at least three such trips remain — so Surprise Me doesn't randomly hand a
+   cautious user an extreme trip unless there's nothing calmer.
+4. Compute a selection weight blending **match score (40%)**, **hidden-gem score
+   (20%)**, **risk fit (15%)**, **lower popularity (15%)**, and **region novelty
+   (10%)**.
+5. Weighted-random pick one **primary** trip.
+6. Pick **two backups**, preferring different regions.
+7. Return an explanation of why the trip was selected.
 
-Random ≠ reckless: hard mismatches and weak fits are filtered out before the
-draw.
+Random ≠ reckless: hard mismatches, weak fits, and (for low-risk users)
+risk-inappropriate trips are filtered out before the draw.
 
 ## 9. How to add new trip zones
 
