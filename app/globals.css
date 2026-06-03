@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: #0c0a07;
+  color: #f0e9d6;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle topographic texture for that rugged, map-inspired feel. */
+.topo-texture {
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(104, 129, 64, 0.10) 0, transparent 38%),
+    radial-gradient(circle at 85% 15%, rgba(189, 90, 46, 0.10) 0, transparent 42%),
+    radial-gradient(circle at 50% 95%, rgba(192, 158, 87, 0.06) 0, transparent 45%);
+}
+
+/* Thin custom scrollbar to match the dark theme. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #33291a;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-track {
+  background: #15110b;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-basecamp-700/70 bg-basecamp-850/80 backdrop-blur;
+  }
+  .field-label {
+    @apply mb-2 block text-sm font-semibold tracking-wide text-sand-200;
+  }
+  .input-base {
+    @apply w-full rounded-xl border border-basecamp-700 bg-basecamp-900 px-3 py-2.5 text-sand-50 outline-none transition focus:border-moss-400 focus:ring-2 focus:ring-moss-500/30 placeholder:text-basecamp-600;
+  }
+}
