@@ -6,7 +6,9 @@ import { ButtonLink } from "@/components/Button";
 import { PreferenceSummary } from "@/components/PreferenceSummary";
 import { RecommendationCard } from "@/components/RecommendationCard";
 import { SafetyNotice } from "@/components/SafetyNotice";
+import { TopTripComparison } from "@/components/TopTripComparison";
 import tripZones from "@/data/tripZones";
+import { buildTopTripComparison } from "@/lib/comparison";
 import { isKnownOrigin, resolveOrigin } from "@/lib/geo";
 import {
   diagnoseRestrictiveness,
@@ -64,6 +66,7 @@ export default function ResultsPage() {
   const list = hasStrong ? recs : getClosestMatches(prefs, tripZones, 3);
   const top = list[0];
   const rest = list.slice(1);
+  const comparison = buildTopTripComparison(prefs, list, 3);
   const originLabel = resolveOrigin(prefs.startingLocation).label;
   const originRecognized = isKnownOrigin(prefs.startingLocation);
 
@@ -129,6 +132,11 @@ export default function ResultsPage() {
             </Link>
           </div>
         </div>
+      )}
+
+      {/* Top 3 comparison */}
+      {comparison && (
+        <TopTripComparison comparison={comparison} isWeakMatchMode={!hasStrong} />
       )}
 
       {/* Why these were selected */}
