@@ -63,6 +63,12 @@ npm run typecheck  # tsc --noEmit
   important / must-have)
 - Transparent **0–100 scoring algorithm** with a per-dimension breakdown
 - Ranked results page with a featured top pick and additional recommendations
+- **Top 3 Comparison** — a compact, side-by-side summary above the cards that
+  labels the picks (best overall, safer/easier backup, more adventurous,
+  quietest, hidden gem…), shows each one's key metrics, strengths, concerns, and
+  one-line main tradeoff so you can decide between them quickly. Pure logic lives
+  in `lib/comparison.ts`; it reuses the existing ranked list and never re-runs
+  matching.
 - Match-score ring, quality labels, and plain-English "why it matches / why it
   might not" explanations
 - **Hidden-gem ranking** and **popularity dampening**
