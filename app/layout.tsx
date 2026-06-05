@@ -48,6 +48,12 @@ export default function RootLayout({
               >
                 Surprise Me
               </Link>
+              <Link
+                href="/profile"
+                className="rounded-lg px-3 py-1.5 font-medium text-sand-200 transition hover:bg-basecamp-800 hover:text-sand-50"
+              >
+                Profile
+              </Link>
             </nav>
           </div>
         </header>
