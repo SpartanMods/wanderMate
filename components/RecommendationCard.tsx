@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Badge } from "./Badge";
+import { LiveConditionsCompact } from "./LiveConditionsBadge";
+import type { LiveConditions } from "@/lib/conditions";
 import { DataQualityDetails, DataQualitySummary } from "./DataQuality";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 import { SafetyNotice } from "./SafetyNotice";
@@ -82,6 +84,8 @@ export function RecommendationCard({
   isSelectedForCompare = false,
   onToggleCompare,
   compareCount = 0,
+  conditions = null,
+  conditionsLoading = false,
 }: {
   rec: TripRecommendation;
   rank: number;
@@ -90,11 +94,19 @@ export function RecommendationCard({
   isSelectedForCompare?: boolean;
   onToggleCompare?: () => void;
   compareCount?: number;
+  conditions?: LiveConditions | null;
+  conditionsLoading?: boolean;
 }) {
   const [open, setOpen] = useState(featured);
   const originShort = originLabel.split(",")[0];
-  const { trip, score, qualityLabel, breakdown, whyItMatches, whyItMightNot } =
-    rec;
+  const {
+    trip,
+    score,
+    qualityLabel,
+    breakdown,
+    whyItMatches,
+    whyItMightNot,
+  } = rec;
   const bestFor = topActivities(trip);
 
   return (
@@ -182,6 +194,16 @@ export function RecommendationCard({
             value={VEHICLE_LABELS[trip.vehicleRequirement]}
           />
         </div>
+
+        {/* Live conditions */}
+        {(conditions !== undefined || conditionsLoading) && (
+          <div className="mt-3">
+            <LiveConditionsCompact
+              conditions={conditions ?? null}
+              loading={conditionsLoading && conditions === undefined}
+            />
+          </div>
+        )}
 
         {/* Camping row */}
         {trip.campingTypes.length > 0 && (

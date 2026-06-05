@@ -6,6 +6,11 @@ import { ZoneAccess } from "@/components/zone/ZoneAccess";
 import { ZoneItinerary } from "@/components/zone/ZoneItinerary";
 import { ZoneLegalRemote } from "@/components/zone/ZoneLegalRemote";
 import { DataQualityDetails } from "@/components/DataQuality";
+import { LiveConditionsBadge } from "@/components/LiveConditionsBadge";
+import { fetchLiveConditions } from "@/lib/conditions";
+
+// Revalidate zone detail pages every hour so live conditions stay fresh
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return tripZones.map((z) => ({ id: z.id }));
@@ -24,13 +29,15 @@ export async function generateMetadata({
   };
 }
 
-export default function ZoneDetailPage({
+export default async function ZoneDetailPage({
   params,
 }: {
   params: { id: string };
 }) {
   const zone = tripZones.find((z) => z.id === params.id);
   if (!zone) notFound();
+
+  const conditions = await fetchLiveConditions(zone);
 
   return (
     <div className="space-y-6">
@@ -43,6 +50,7 @@ export default function ZoneDetailPage({
         </Link>
       </div>
       <ZoneHero zone={zone} />
+      <LiveConditionsBadge conditions={conditions} />
       <ZoneAccess zone={zone} />
       <ZoneLegalRemote zone={zone} />
       <ZoneItinerary zone={zone} />
