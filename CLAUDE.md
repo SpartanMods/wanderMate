@@ -11,7 +11,7 @@ Read this file first. It contains all 11 Phase 1 tasks, step-by-step with code.
 |---|---|---|
 | 1 | Expand ActivityKey (kayaking/canoeing/motorBoating/lakeAccess/golf/dining), open `state` to `string`, add `coordinates` to TripZone | ✅ Done |
 | 2 | Season hard-fail + OHV legality hard constraint in `hasHardConstraintViolation` | ✅ Done |
-| 3 | Supabase CLI, schema migrations, zones seed (24 zones in DB) | ✅ Done |
+| 3 | Supabase CLI, schema migrations, zones seed (24 zones in DB), verified via REST API | ✅ Done |
 | 4 | Supabase browser + server clients, DB types, middleware | 🔜 Next |
 | 5 | URL hash preference state (replace localStorage) | ⬜ Pending |
 | 6 | Results page rebuilt (5–7 zones, user-select comparison) | ⬜ Pending |
