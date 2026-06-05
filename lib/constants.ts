@@ -13,7 +13,7 @@ import type {
 } from "./types";
 
 export const DEFAULT_STARTING_LOCATION = "Denver, CO";
-export const LAUNCH_REGION_LABEL = "MVP region: Colorado, Wyoming, Utah";
+export const LAUNCH_REGION_LABEL = "MVP region: Colorado, Wyoming & Utah";
 
 export const ACTIVITIES: { key: ActivityKey; label: string }[] = [
   { key: "dispersedCamping", label: "Dispersed camping" },
@@ -23,7 +23,10 @@ export const ACTIVITIES: { key: ActivityKey; label: string }[] = [
   { key: "dirtBikingOhv", label: "Dirt biking / OHV" },
   { key: "overlanding", label: "Overlanding" },
   { key: "fishing", label: "Fishing" },
-  { key: "lakePaddle", label: "Lake / paddleboarding" },
+  { key: "kayaking", label: "Kayaking" },
+  { key: "canoeing", label: "Canoeing" },
+  { key: "motorBoating", label: "Motor boating" },
+  { key: "lakeAccess", label: "Lake access" },
   { key: "scenicDrive", label: "Scenic drive" },
   { key: "wildlife", label: "Wildlife viewing" },
   { key: "photography", label: "Photography" },
@@ -31,6 +34,8 @@ export const ACTIVITIES: { key: ActivityKey; label: string }[] = [
   { key: "climbing", label: "Climbing" },
   { key: "mountainBiking", label: "Mountain biking" },
   { key: "stargazing", label: "Stargazing" },
+  { key: "golf", label: "Golf" },
+  { key: "dining", label: "Dining / local eats" },
 ];
 
 export const ACTIVITY_LABELS: Record<ActivityKey, string> = ACTIVITIES.reduce(
@@ -188,12 +193,15 @@ export const GEAR_OPTIONS: string[] = [
   "Fishing gear",
   "Dirt bike",
   "4x4 vehicle",
-  "Paddleboard / kayak",
+  "Kayak / canoe",
+  "Motorboat",
+  "Paddleboard",
   "Backpacking gear",
   "Recovery boards",
   "Satellite communicator",
   "Bear canister",
   "Winter gear",
+  "Golf clubs",
 ];
 
 // Base scoring weights. Sum = 100.

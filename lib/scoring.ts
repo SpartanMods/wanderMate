@@ -295,7 +295,12 @@ function scoreGear(prefs: TripPreferences, trip: TripZone): number {
 
   push(trip.activities.dirtBikingOhv >= 4, "Dirt bike");
   push(trip.activities.fishing >= 4, "Fishing gear");
-  push(trip.activities.lakePaddle >= 4, "Paddleboard / kayak");
+  push(
+    (trip.activities.kayaking ?? 0) >= 4 || (trip.activities.canoeing ?? 0) >= 4,
+    "Kayak / canoe"
+  );
+  push((trip.activities.motorBoating ?? 0) >= 4, "Motorboat");
+  push((trip.activities.lakeAccess ?? 0) >= 4, "Paddleboard");
   push(trip.activities.backpacking >= 4, "Backpacking gear");
   push(trip.offGridLevel >= 3, "Satellite communicator");
   push(
@@ -779,6 +784,21 @@ export function hasHardConstraintViolation(
       prefs.selectedActivities.dirtBikingOhv === "must_have"
     )
       return true;
+  }
+
+  // Season hard constraint: if a date is given and the zone's best seasons
+  // don't include the trip's season, eliminate the zone entirely.
+  const tripSeason = inferSeason(prefs.startDate);
+  if (tripSeason && trip.bestSeasons.length > 0) {
+    if (!trip.bestSeasons.includes(tripSeason)) return true;
+  }
+
+  // OHV must-have + OHV explicitly illegal in this zone = hard fail.
+  if (
+    prefs.selectedActivities.dirtBikingOhv === "must_have" &&
+    trip.legality?.ohvLegal === "no"
+  ) {
+    return true;
   }
 
   return false;

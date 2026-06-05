@@ -19,7 +19,7 @@ import {
   VIBE_OPTIONS,
 } from "@/lib/constants";
 import { ORIGIN_PRESETS } from "@/lib/geo";
-import { savePreferences } from "@/lib/storage";
+import { buildResultsUrl } from "@/lib/prefHash";
 import type {
   ActivityKey,
   ActivityWeight,
@@ -83,8 +83,7 @@ export function TripPreferenceForm() {
       return;
     }
 
-    savePreferences(result.data);
-    router.push("/results");
+    router.push(buildResultsUrl(result.data));
   }
 
   const activityCount = Object.keys(prefs.selectedActivities).length;

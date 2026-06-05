@@ -33,7 +33,10 @@ const ACTIVITY_KEYS: ActivityKey[] = [
   "dirtBikingOhv",
   "overlanding",
   "fishing",
-  "lakePaddle",
+  "kayaking",
+  "canoeing",
+  "motorBoating",
+  "lakeAccess",
   "scenicDrive",
   "wildlife",
   "photography",
@@ -41,6 +44,8 @@ const ACTIVITY_KEYS: ActivityKey[] = [
   "climbing",
   "mountainBiking",
   "stargazing",
+  "golf",
+  "dining",
 ];
 
 function zeroActivities(): Record<ActivityKey, number> {

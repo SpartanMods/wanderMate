@@ -85,7 +85,7 @@ export const mockTripJournals: TripJournal[] = [
     endDate: "2025-08-10",
     generalArea: "Mesa County, Colorado",
     state: "CO",
-    activities: ["fishing", "lakePaddle", "developedCamping", "scenicDrive"],
+    activities: ["fishing", "kayaking", "developedCamping", "scenicDrive"],
     routeType: "basecamp",
     routeSummary:
       "Booked a developed site as a basecamp and bounced between several of the " +
