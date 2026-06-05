@@ -11,6 +11,8 @@
     "test": "node --import ./scripts/register-loader.mjs --test 'lib/**/*.test.ts'"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.107.0",
     "next": "^14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
