@@ -15,8 +15,8 @@ Read this file first. It contains all 11 Phase 1 tasks, step-by-step with code.
 | 4 | Supabase browser + server clients, DB types, middleware | ✅ Done |
 | 5 | URL hash preference state (replace localStorage) | ✅ Done |
 | 6 | Results page rebuilt (5–7 zones, user-select comparison) | ✅ Done |
-| 7 | Public zone detail pages `/zones/[id]` | 🔜 Next |
-| 8 | Live conditions layer (Weather.gov + fire restrictions) | ⬜ Pending |
+| 7 | Public zone detail pages `/zones/[id]` | ✅ Done |
+| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🔜 Next |
 | 9 | Auth pages (login, magic link, Google OAuth, callback) | ⬜ Pending |
 | 10 | Save Trip + Field Report CRUD + dashboard | ⬜ Pending |
 | 11 | Profile baseline preferences pre-fill planner form | ⬜ Pending |
