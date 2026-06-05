@@ -785,6 +785,21 @@ export function hasHardConstraintViolation(
       return true;
   }
 
+  // Season hard constraint: if a date is given and the zone's best seasons
+  // don't include the trip's season, eliminate the zone entirely.
+  const tripSeason = inferSeason(prefs.startDate);
+  if (tripSeason && trip.bestSeasons.length > 0) {
+    if (!trip.bestSeasons.includes(tripSeason)) return true;
+  }
+
+  // OHV must-have + OHV explicitly illegal in this zone = hard fail.
+  if (
+    prefs.selectedActivities.dirtBikingOhv === "must_have" &&
+    trip.legality?.ohvLegal === "no"
+  ) {
+    return true;
+  }
+
   return false;
 }
 
