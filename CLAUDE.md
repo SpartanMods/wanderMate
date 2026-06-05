@@ -39,3 +39,35 @@ Read this file first. It contains all 11 Phase 1 tasks, step-by-step with code.
 
 ## Env Vars Needed
 Copy `.env.local.example` → `.env.local` and fill in Supabase URL + keys.
+
+## Coding Standards (required)
+
+### Before making changes
+- Inspect existing codebase: architecture, patterns, naming, dependencies, test setup
+- Stop and ask if: multiple valid interpretations exist; a required file/component/API/schema/route/dependency is missing; the change may affect data models, auth, permissions, routing, scoring, persistence, or user-facing behavior; unsure whether to extend existing patterns or create new ones
+- Do not silently choose a direction when the choice meaningfully affects the product
+
+### TypeScript
+- Strict, explicit types; avoid `any` (explain if used)
+- Prefer typed interfaces, discriminated unions, Zod schemas, or inferred types
+- Small, readable, purpose-driven functions
+- Reuse existing utilities/types/constants/components before creating new ones
+- No duplicated logic; no magic values (use named constants)
+- Preserve project structure; no unnecessary dependencies
+- Do not weaken linting, typing, validation, or error handling to make code pass
+
+### Testing — truthful reporting only
+After every change run: `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`
+- If a command fails: fix it or explain which failed, exact reason, whether caused by the change or pre-existing, what remains
+- Never claim "tests pass / build clean / no issues" unless the command actually ran and succeeded
+
+### Git safety
+- Identify files to modify before editing; avoid unrelated files
+- No reformatting large files unless formatting is the task
+- No env files, secrets, credentials, or deployment settings without explicit permission
+
+### End-of-task summary
+Every completed task must include:
+- **Changes made** — files and what changed in each
+- **Functionality added or updated** — what the user can now do / how it works
+- **Validation performed** — every command run and its result
