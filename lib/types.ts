@@ -14,14 +14,19 @@ export type ActivityKey =
   | "dirtBikingOhv"
   | "overlanding"
   | "fishing"
-  | "lakePaddle"
+  | "kayaking"
+  | "canoeing"
+  | "motorBoating"
+  | "lakeAccess"
   | "scenicDrive"
   | "wildlife"
   | "photography"
   | "winterAccess"
   | "climbing"
   | "mountainBiking"
-  | "stargazing";
+  | "stargazing"
+  | "golf"
+  | "dining";
 
 export type SkillLevel = "beginner" | "intermediate" | "advanced" | "expert";
 
@@ -136,7 +141,8 @@ export type TripZone = {
   id: string;
   name: string;
   region: string;
-  state: "CO" | "WY" | "UT";
+  state: string;
+  coordinates?: { lat: number; lng: number };
   summary: string;
   generalArea: string;
   activities: Record<ActivityKey, number>;
