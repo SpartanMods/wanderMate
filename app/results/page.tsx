@@ -16,7 +16,6 @@ import {
   getRecommendations,
 } from "@/lib/matching";
 import { loadPreferences } from "@/lib/storage";
-import type { LiveConditions } from "@/lib/conditions";
 import type { TripPreferences, TripRecommendation } from "@/lib/types";
 
 const STRONG_THRESHOLD = 68;
@@ -29,10 +28,6 @@ export default function ResultsPage() {
   const [selectedForCompare, setSelectedForCompare] = useState<Set<string>>(
     new Set()
   );
-  const [conditions, setConditions] = useState<
-    Record<string, LiveConditions>
-  >({});
-  const [conditionsLoading, setConditionsLoading] = useState(false);
 
   function toggleCompare(zoneId: string) {
     setSelectedForCompare((prev) => {
@@ -57,29 +52,6 @@ export default function ResultsPage() {
     const strong = recs.filter((r) => r.score >= STRONG_THRESHOLD);
     return { recs, strong };
   }, [prefs]);
-
-  // Fetch live conditions for all visible result zones in parallel
-  useEffect(() => {
-    if (!data) return;
-    const list = data.strong.length > 0 ? data.recs : [];
-    if (list.length === 0) return;
-    setConditionsLoading(true);
-    Promise.all(
-      list.map((r) =>
-        fetch(`/api/conditions/${r.trip.id}`)
-          .then((res) => (res.ok ? res.json() : null))
-          .catch(() => null)
-          .then((cond) => [r.trip.id, cond] as const)
-      )
-    ).then((results) => {
-      const map: Record<string, LiveConditions> = {};
-      for (const [id, cond] of results) {
-        if (cond) map[id] = cond as LiveConditions;
-      }
-      setConditions(map);
-      setConditionsLoading(false);
-    });
-  }, [data]);
 
   // Loading / no-preferences states.
   if (prefs === undefined) {
@@ -209,8 +181,6 @@ export default function ResultsPage() {
             isSelectedForCompare={selectedForCompare.has(top.trip.id)}
             onToggleCompare={() => toggleCompare(top.trip.id)}
             compareCount={selectedForCompare.size}
-            conditions={conditions[top.trip.id] ?? null}
-            conditionsLoading={conditionsLoading}
           />
         </div>
       )}
@@ -228,8 +198,6 @@ export default function ResultsPage() {
               isSelectedForCompare={selectedForCompare.has(rec.trip.id)}
               onToggleCompare={() => toggleCompare(rec.trip.id)}
               compareCount={selectedForCompare.size}
-              conditions={conditions[rec.trip.id] ?? null}
-              conditionsLoading={conditionsLoading}
             />
           ))}
         </div>
