@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Badge } from "./Badge";
 import { DataQualityDetails, DataQualitySummary } from "./DataQuality";
 import { ScoreBreakdown } from "./ScoreBreakdown";
@@ -236,18 +237,25 @@ export function RecommendationCard({
           </div>
         </div>
 
-        {/* Expand toggle */}
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-moss-300 hover:text-moss-200"
-          aria-expanded={open}
-        >
-          {open ? "Hide details" : "Itinerary, watchouts & score breakdown"}
-          <span aria-hidden className={cn("transition", open && "rotate-180")}>
-            ▾
-          </span>
-        </button>
+        <div className="mt-4 flex items-center justify-between gap-4">
+          <Link
+            href={`/zones/${trip.id}`}
+            className="text-sm text-moss-300 underline-offset-2 hover:underline"
+          >
+            View full detail →
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-moss-300 hover:text-moss-200"
+            aria-expanded={open}
+          >
+            {open ? "Hide details" : "Itinerary, watchouts & score breakdown"}
+            <span aria-hidden className={cn("transition", open && "rotate-180")}>
+              ▾
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Details */}
