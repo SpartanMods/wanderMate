@@ -67,7 +67,8 @@ const WEATHER_LINK: VerificationLink = {
   category: "weather",
 };
 
-const ROAD_LINK: Record<TripZone["state"], VerificationLink> = {
+type SupportedRoadState = "CO" | "WY" | "UT";
+const ROAD_LINK: Record<SupportedRoadState, VerificationLink> = {
   CO: {
     label: "Colorado road conditions (COtrip)",
     url: "https://www.cotrip.org/",
@@ -95,16 +96,21 @@ const ROAD_LINK: Record<TripZone["state"], VerificationLink> = {
 const verify = (
   managing: { label: string; url: string },
   state: TripZone["state"]
-): VerificationLink[] => [
-  {
-    label: managing.label,
-    url: managing.url,
-    type: "official",
-    category: "land_manager",
-  },
-  WEATHER_LINK,
-  ROAD_LINK[state],
-];
+): VerificationLink[] => {
+  const roadLinks = (state in ROAD_LINK)
+    ? [ROAD_LINK[state as SupportedRoadState]]
+    : [];
+  return [
+    {
+      label: managing.label,
+      url: managing.url,
+      type: "official",
+      category: "land_manager",
+    },
+    WEATHER_LINK,
+    ...roadLinks,
+  ];
+};
 
 const tripZones: TripZone[] = [
   {

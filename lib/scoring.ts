@@ -300,6 +300,7 @@ function scoreGear(prefs: TripPreferences, trip: TripZone): number {
     "Kayak / canoe"
   );
   push((trip.activities.motorBoating ?? 0) >= 4, "Motorboat");
+  push((trip.activities.lakeAccess ?? 0) >= 4, "Paddleboard");
   push(trip.activities.backpacking >= 4, "Backpacking gear");
   push(trip.offGridLevel >= 3, "Satellite communicator");
   push(
