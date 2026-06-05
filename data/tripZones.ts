@@ -115,6 +115,7 @@ const verify = (
 const tripZones: TripZone[] = [
   {
     id: 'taylor-park',
+    coordinates: { lat: 38.8388, lng: -106.5784 },
     name: 'Taylor Park',
     region: 'San Isabel National Forest',
     state: 'CO',
@@ -219,6 +220,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'grand-mesa',
+    coordinates: { lat: 39.1131, lng: -108.0128 },
     name: 'Grand Mesa',
     region: 'Grand Mesa National Forest',
     state: 'CO',
@@ -323,6 +325,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'flat-tops',
+    coordinates: { lat: 39.9539, lng: -107.2558 },
     name: 'Flat Tops Wilderness',
     region: 'White River National Forest',
     state: 'CO',
@@ -427,6 +430,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'medicine-bow',
+    coordinates: { lat: 41.5829, lng: -106.2789 },
     name: 'Medicine Bow National Forest',
     region: 'Snowy Range',
     state: 'WY',
@@ -531,6 +535,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'vedauwoo',
+    coordinates: { lat: 41.2983, lng: -105.5829 },
     name: 'Vedauwoo',
     region: 'Medicine Bow–Routt National Forest',
     state: 'WY',
@@ -635,6 +640,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'flaming-gorge',
+    coordinates: { lat: 41.1765, lng: -109.5338 },
     name: 'Flaming Gorge',
     region: 'Flaming Gorge National Recreation Area',
     state: 'UT',
@@ -739,6 +745,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'moab-area',
+    coordinates: { lat: 38.4466, lng: -109.3856 },
     name: 'Moab Area',
     region: 'Moab / Canyonlands / Arches region',
     state: 'UT',
@@ -840,6 +847,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'san-rafael-swell',
+    coordinates: { lat: 38.7855, lng: -110.7884 },
     name: 'San Rafael Swell',
     region: 'Central Utah high desert',
     state: 'UT',
@@ -944,6 +952,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'capitol-reef-area',
+    coordinates: { lat: 38.067, lng: -111.1553 },
     name: 'Capitol Reef Area',
     region: 'Capitol Reef National Park & surrounds',
     state: 'UT',
@@ -1048,6 +1057,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'uncompahgre-plateau',
+    coordinates: { lat: 38.4215, lng: -108.3768 },
     name: 'Uncompahgre Plateau',
     region: 'Uncompahgre National Forest',
     state: 'CO',
@@ -1152,6 +1162,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'arkansas-river-valley',
+    coordinates: { lat: 38.5371, lng: -105.991 },
     name: 'Arkansas River Valley',
     region: 'Central Colorado',
     state: 'CO',
@@ -1256,6 +1267,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'buena-vista-fourmile',
+    coordinates: { lat: 38.8422, lng: -106.1311 },
     name: 'Buena Vista / Fourmile Area',
     region: 'San Isabel National Forest',
     state: 'CO',
@@ -1360,6 +1372,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'walden-north-park',
+    coordinates: { lat: 40.7301, lng: -106.2821 },
     name: 'Walden / North Park',
     region: 'North Park Valley',
     state: 'CO',
@@ -1464,6 +1477,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'snowy-range',
+    coordinates: { lat: 41.3222, lng: -106.1728 },
     name: 'Snowy Range',
     region: 'Medicine Bow National Forest',
     state: 'WY',
@@ -1568,6 +1582,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'poudre-canyon',
+    coordinates: { lat: 40.6999, lng: -105.5446 },
     name: 'Poudre Canyon',
     region: 'Cache la Poudre River Corridor',
     state: 'CO',
@@ -1672,6 +1687,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'gunnison-hartman',
+    coordinates: { lat: 38.6477, lng: -107.0603 },
     name: 'Gunnison / Hartman Rocks',
     region: 'Gunnison Basin',
     state: 'CO',
@@ -1779,6 +1795,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'rabbit-valley',
+    coordinates: { lat: 39.1725, lng: -109.0221 },
     name: 'Rabbit Valley',
     region: 'McInnis Canyons National Conservation Area',
     state: 'CO',
@@ -1883,6 +1900,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'dinosaur-browns-park',
+    coordinates: { lat: 40.4937, lng: -109.0008 },
     name: 'Dinosaur / Browns Park',
     region: 'Dinosaur National Monument & Browns Park NWR',
     state: 'UT',
@@ -1987,6 +2005,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'manti-la-sal',
+    coordinates: { lat: 38.3018, lng: -109.2833 },
     name: 'Manti-La Sal National Forest',
     region: 'La Sal and Abajo Mountains',
     state: 'UT',
@@ -2091,6 +2110,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'fishlake-national-forest',
+    coordinates: { lat: 38.5514, lng: -111.7053 },
     name: 'Fishlake National Forest',
     region: 'Fish Lake Plateau',
     state: 'UT',
@@ -2195,6 +2215,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'uinta-mountains',
+    coordinates: { lat: 40.7696, lng: -110.3275 },
     name: 'Uinta Mountains',
     region: 'Ashley and Uinta-Wasatch-Cache National Forests',
     state: 'UT',
@@ -2299,6 +2320,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'red-feather-lakes',
+    coordinates: { lat: 40.8077, lng: -105.5756 },
     name: 'Red Feather Lakes',
     region: 'Roosevelt National Forest',
     state: 'CO',
@@ -2403,6 +2425,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'south-park-eleven-mile',
+    coordinates: { lat: 39.0395, lng: -105.8936 },
     name: 'South Park / Eleven Mile',
     region: 'South Park Basin',
     state: 'CO',
@@ -2507,6 +2530,7 @@ const tripZones: TripZone[] = [
   },
   {
     id: 'book-cliffs',
+    coordinates: { lat: 39.5074, lng: -109.149 },
     name: 'Book Cliffs',
     region: 'Book Cliffs Wilderness Study Areas',
     state: 'UT',
