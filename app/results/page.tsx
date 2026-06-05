@@ -18,12 +18,29 @@ import {
 import { loadPreferences } from "@/lib/storage";
 import type { TripPreferences, TripRecommendation } from "@/lib/types";
 
-const STRONG_THRESHOLD = 70;
+const STRONG_THRESHOLD = 68;
+const MAX_RESULTS = 7;
 
 export default function ResultsPage() {
   const [prefs, setPrefs] = useState<TripPreferences | null | undefined>(
     undefined
   );
+  const [selectedForCompare, setSelectedForCompare] = useState<Set<string>>(
+    new Set()
+  );
+
+  function toggleCompare(zoneId: string) {
+    setSelectedForCompare((prev) => {
+      const next = new Set(prev);
+      if (next.has(zoneId)) {
+        next.delete(zoneId);
+        return next;
+      }
+      if (next.size >= 3) return prev;
+      next.add(zoneId);
+      return next;
+    });
+  }
 
   useEffect(() => {
     setPrefs(loadPreferences());
@@ -31,7 +48,7 @@ export default function ResultsPage() {
 
   const data = useMemo(() => {
     if (!prefs) return null;
-    const recs = getRecommendations(prefs, tripZones);
+    const recs = getRecommendations(prefs, tripZones).slice(0, MAX_RESULTS);
     const strong = recs.filter((r) => r.score >= STRONG_THRESHOLD);
     return { recs, strong };
   }, [prefs]);
@@ -66,7 +83,11 @@ export default function ResultsPage() {
   const list = hasStrong ? recs : getClosestMatches(prefs, tripZones, 3);
   const top = list[0];
   const rest = list.slice(1);
-  const comparison = buildTopTripComparison(prefs, list, 3);
+  const selectedRecs = list.filter((r) => selectedForCompare.has(r.trip.id));
+  const comparison =
+    selectedRecs.length >= 2
+      ? buildTopTripComparison(prefs, selectedRecs, selectedRecs.length)
+      : null;
   const originLabel = resolveOrigin(prefs.startingLocation).label;
   const originRecognized = isKnownOrigin(prefs.startingLocation);
 
@@ -134,11 +155,6 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* Top 3 comparison */}
-      {comparison && (
-        <TopTripComparison comparison={comparison} isWeakMatchMode={!hasStrong} />
-      )}
-
       {/* Why these were selected */}
       <div className="card p-5">
         <h2 className="text-sm font-bold uppercase tracking-wide text-sand-300">
@@ -162,6 +178,9 @@ export default function ResultsPage() {
             rank={1}
             featured
             originLabel={originLabel}
+            isSelectedForCompare={selectedForCompare.has(top.trip.id)}
+            onToggleCompare={() => toggleCompare(top.trip.id)}
+            compareCount={selectedForCompare.size}
           />
         </div>
       )}
@@ -176,9 +195,23 @@ export default function ResultsPage() {
               rec={rec}
               rank={i + 2}
               originLabel={originLabel}
+              isSelectedForCompare={selectedForCompare.has(rec.trip.id)}
+              onToggleCompare={() => toggleCompare(rec.trip.id)}
+              compareCount={selectedForCompare.size}
             />
           ))}
         </div>
+      )}
+
+      {/* Compare panel */}
+      {selectedForCompare.size < 2 ? (
+        <div className="rounded-xl border border-basecamp-700/50 bg-basecamp-900/30 p-4 text-sm text-sand-200/60">
+          Select 2–3 trips above to compare them side by side.
+        </div>
+      ) : (
+        comparison && (
+          <TopTripComparison comparison={comparison} isWeakMatchMode={!hasStrong} />
+        )
       )}
 
       <div className="flex flex-col gap-3 pt-2 sm:flex-row">

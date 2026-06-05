@@ -78,11 +78,17 @@ export function RecommendationCard({
   rank,
   featured = false,
   originLabel = "Denver, CO",
+  isSelectedForCompare = false,
+  onToggleCompare,
+  compareCount = 0,
 }: {
   rec: TripRecommendation;
   rank: number;
   featured?: boolean;
   originLabel?: string;
+  isSelectedForCompare?: boolean;
+  onToggleCompare?: () => void;
+  compareCount?: number;
 }) {
   const [open, setOpen] = useState(featured);
   const originShort = originLabel.split(",")[0];
@@ -120,6 +126,21 @@ export function RecommendationCard({
               >
                 {qualityLabel}
               </Badge>
+              {onToggleCompare && (
+                <button
+                  type="button"
+                  onClick={onToggleCompare}
+                  disabled={!isSelectedForCompare && compareCount >= 3}
+                  className={cn(
+                    "rounded border px-2 py-1 text-xs transition-colors disabled:opacity-30",
+                    isSelectedForCompare
+                      ? "border-moss-400 bg-moss-600/20 text-moss-300"
+                      : "border-basecamp-600 text-sand-200/60 hover:border-moss-500"
+                  )}
+                >
+                  {isSelectedForCompare ? "✓ Compare" : "Compare"}
+                </button>
+              )}
             </div>
             <h3 className="mt-1.5 text-xl font-extrabold tracking-tight text-sand-50">
               {trip.name}
