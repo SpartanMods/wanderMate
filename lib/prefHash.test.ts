@@ -38,3 +38,39 @@ test("encodePrefs produces URL-safe characters only", () => {
   const encoded = encodePrefs(sample);
   assert.match(encoded, /^[A-Za-z0-9_-]+$/);
 });
+
+function encodeRaw(value: unknown): string {
+  return Buffer.from(JSON.stringify(value), "utf8")
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+test("decodePrefs returns null for valid JSON with an empty object", () => {
+  assert.equal(decodePrefs(encodeRaw({})), null);
+});
+
+test("decodePrefs returns null when a field has the wrong type", () => {
+  assert.equal(decodePrefs(encodeRaw({ ...sample, selectedActivities: "x" })), null);
+  assert.equal(decodePrefs(encodeRaw({ ...sample, maxDriveTimeHours: "3" })), null);
+});
+
+test("decodePrefs returns null when a required field is missing", () => {
+  const { experienceLevel: _omit, ...rest } = sample;
+  assert.equal(decodePrefs(encodeRaw(rest)), null);
+});
+
+test("decodePrefs returns null for out-of-range values", () => {
+  assert.equal(decodePrefs(encodeRaw({ ...sample, crowdTolerance: 9 })), null);
+});
+
+test("decodePrefs drops unknown extra fields", () => {
+  const decoded = decodePrefs(encodeRaw({ ...sample, injected: "<script>" }));
+  assert.deepEqual(decoded, sample);
+});
+
+test("decodePrefs returns null for non-object JSON", () => {
+  assert.equal(decodePrefs(encodeRaw("hello")), null);
+  assert.equal(decodePrefs(encodeRaw(null)), null);
+});

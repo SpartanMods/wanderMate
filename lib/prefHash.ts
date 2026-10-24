@@ -1,4 +1,5 @@
 import type { TripPreferences } from "./types";
+import { validatePreferences } from "./validation";
 
 /** Encode TripPreferences to a URL-safe base64 string. */
 export function encodePrefs(prefs: TripPreferences): string {
@@ -7,12 +8,16 @@ export function encodePrefs(prefs: TripPreferences): string {
   return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-/** Decode a URL-safe base64 string back to TripPreferences, or null on failure. */
+/**
+ * Decode a URL-safe base64 string back to TripPreferences. The `p` param is
+ * user-controlled, so the result is validated; returns null on any failure.
+ */
 export function decodePrefs(encoded: string): TripPreferences | null {
   try {
     const b64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
     const json = Buffer.from(b64, "base64").toString("utf8");
-    return JSON.parse(json) as TripPreferences;
+    const result = validatePreferences(JSON.parse(json));
+    return result.success ? result.data : null;
   } catch {
     return null;
   }

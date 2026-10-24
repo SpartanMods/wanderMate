@@ -219,6 +219,13 @@ export const SCORE_WEIGHTS = {
   riskFit: 9,
 } as const;
 
+// Missing must-have activities (rating <= 1): points lost per activity, and the
+// most this penalty can take off in total. Cap is reached at 5+ missing (#19).
+export const MISSING_MUST_HAVE_PENALTY = {
+  perActivity: 10,
+  cap: 45,
+} as const;
+
 // Short, lower-case labels for risk tolerance, used in explanations.
 export const RISK_LABELS: Record<1 | 2 | 3 | 4, string> = {
   1: "low-risk",
