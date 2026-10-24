@@ -1,7 +1,13 @@
 import type { WeatherCondition } from "./types";
 
 const BASE = "https://api.weather.gov";
-const UA = "WanderMate/1.0 (contact@wandermate.app)";
+/** NWS requires a reachable contact in the User-Agent; this is the project inbox. */
+const DEFAULT_NWS_CONTACT = "wandermate@gmail.com";
+
+function userAgent(): string {
+  const contact = process.env.NWS_USER_AGENT_CONTACT || DEFAULT_NWS_CONTACT;
+  return `WanderMate/1.0 (${contact})`;
+}
 
 export async function fetchWeatherForCoords(
   lat: number,
@@ -11,7 +17,7 @@ export async function fetchWeatherForCoords(
     const pointRes = await fetch(
       `${BASE}/points/${lat.toFixed(4)},${lng.toFixed(4)}`,
       {
-        headers: { "User-Agent": UA, Accept: "application/geo+json" },
+        headers: { "User-Agent": userAgent(), Accept: "application/geo+json" },
         next: { revalidate: 3600 },
       }
     );
@@ -21,7 +27,7 @@ export async function fetchWeatherForCoords(
     if (!forecastUrl) return null;
 
     const forecastRes = await fetch(forecastUrl, {
-      headers: { "User-Agent": UA, Accept: "application/geo+json" },
+      headers: { "User-Agent": userAgent(), Accept: "application/geo+json" },
       next: { revalidate: 3600 },
     });
     if (!forecastRes.ok) return null;
