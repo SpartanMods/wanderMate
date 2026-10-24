@@ -1,9 +1,16 @@
 # WanderMate — Claude Code Context
 
 ## Active Implementation Plan
-`docs/superpowers/plans/2026-06-04-wandermate-phase1.md`
+The Phase 1 spec is the PRD in GitHub issue #7. (The plan file previously
+referenced here, `docs/superpowers/plans/2026-06-04-wandermate-phase1.md`,
+was never committed to the repo.)
 
-Read this file first. It contains all 11 Phase 1 tasks, step-by-step with code.
+## ⚠️ External API Access Required — see issue #20
+Claude Code cloud sessions currently block every external API the app uses
+(weather.gov, USFS, BLM, RIDB, Supabase, Nominatim). This is **very important**:
+it blocks verifying the fire data (#11) and Tasks 9–11 (Supabase). Unlock steps
+are in #20 and its sub-tickets #21–#26. Until then, do not guess at upstream
+schemas — use fixtures and say what is unverified.
 
 ## Phase 1 Progress
 
@@ -16,7 +23,7 @@ Read this file first. It contains all 11 Phase 1 tasks, step-by-step with code.
 | 5 | URL hash preference state (replace localStorage) | ✅ Done |
 | 6 | Results page rebuilt (5–7 zones, user-select comparison) | ✅ Done |
 | 7 | Public zone detail pages `/zones/[id]` | ✅ Done |
-| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🔜 Next |
+| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🟡 Shipped; fixes in progress (#11–#19) |
 | 9 | Auth pages (login, magic link, Google OAuth, callback) | ⬜ Pending |
 | 10 | Save Trip + Field Report CRUD + dashboard | ⬜ Pending |
 | 11 | Profile baseline preferences pre-fill planner form | ⬜ Pending |
@@ -28,6 +35,9 @@ Read this file first. It contains all 11 Phase 1 tasks, step-by-step with code.
 - **Zones:** Static `data/tripZones.ts` for Phase 1 reads; also seeded to Supabase `zones` table
 - **Field Reports:** Renamed from "journal entries" — private by default
 - **Monetization:** Freemium; pro tier gates saved trips, field reports, offline cards
+- **Live fire conditions (#13):** callouts + user filter (own `fire=` query param, hides nothing by default) + graduated ranking penalty (Stage 1 −5, Stage 2 −12, Closure −30, Unknown 0). Batch-fetch all eligible zones concurrently, show "Loading live data…", rank once after all settle. 10s timeout per request; weather.gov's two calls share one 10s limit. Timeout/error = unknown.
+- **Missing must-have penalty (#19):** −10 per activity (was −20), cap stays −45
+- **Task 8 fix order:** #14/#15/#17 → #12 → #11 → #18/#19 → #13/#16 → Task 9
 - **Test runner:** Node built-in `node:test` — run individual files: `node --import ./scripts/register-loader.mjs --test lib/<file>.test.ts`
 
 ## Supabase Schema (applied)

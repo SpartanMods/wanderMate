@@ -1,4 +1,4 @@
-import type { FireRestriction } from "./types";
+import type { FireLevel, FireRestriction } from "./types";
 
 const USFS_FIRE_URL =
   "https://apps.fs.usda.gov/arcgis/rest/services/EDW/EDW_FireRestrictions_01/MapServer/0/query";
@@ -6,26 +6,64 @@ const USFS_FIRE_URL =
 const BLM_CLOSURE_URL =
   "https://gis.blm.gov/arcgis/rest/services/lands_and_realty/BLM_National_Conservation_Lands/FeatureServer/0/query";
 
-const LEVEL_ORDER: Record<string, number> = {
-  "Stage 2": 3,
+const LEVEL_ORDER: Record<FireLevel, number> = {
+  "Stage 1": 1,
+  "Stage 2": 2,
+  "Stage 3": 3,
   Closure: 3,
-  "Stage 1": 2,
-  Prevention: 1,
 };
 
-function parseLevel(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const upper = raw.toUpperCase();
-  if (upper.includes("2") || upper.includes("CLOSURE")) return "Stage 2";
-  if (upper.includes("1") || upper.includes("PREVENTION")) return "Stage 1";
-  return raw;
+/** Phrases meaning a restriction is not (or no longer) in effect. Checked first. */
+const NO_RESTRICTION_PATTERN =
+  /\b(lifted|rescinded|rescind|no (fire )?restrictions?|none)\b/i;
+
+/** Advisory-only language; counts as no restriction when no stage is named. */
+const ADVISORY_PATTERN = /\bprevention\b/i;
+
+const CLOSURE_PATTERN = /\b(closure|closed|full fire ban)\b/i;
+
+/** "Stage" followed by a level in digit, roman, or word form: "Stage 2", "STAGE-II", "stage two". */
+const STAGE_PATTERN = /\bstage[\s\-_:#]*(3|2|1|iii|ii|i|three|two|one)\b/gi;
+
+const STAGE_TOKEN_TO_LEVEL: Record<string, FireLevel> = {
+  "1": "Stage 1",
+  i: "Stage 1",
+  one: "Stage 1",
+  "2": "Stage 2",
+  ii: "Stage 2",
+  two: "Stage 2",
+  "3": "Stage 3",
+  iii: "Stage 3",
+  three: "Stage 3",
+};
+
+export type ParsedFireLevel =
+  | { kind: "level"; level: FireLevel }
+  | { kind: "none" }
+  | { kind: "unknown" };
+
+/**
+ * Fuzzy-parses a raw restriction value. Only an explicit stage phrase or
+ * closure language counts as a restriction; a bare digit never does.
+ */
+export function parseLevel(raw: string | null | undefined): ParsedFireLevel {
+  if (!raw || raw.trim() === "") return { kind: "unknown" };
+  if (NO_RESTRICTION_PATTERN.test(raw)) return { kind: "none" };
+  if (CLOSURE_PATTERN.test(raw)) return { kind: "level", level: "Closure" };
+
+  let worst: FireLevel | null = null;
+  for (const match of Array.from(raw.matchAll(STAGE_PATTERN))) {
+    const level = STAGE_TOKEN_TO_LEVEL[match[1].toLowerCase()];
+    if (level) worst = highestLevel(worst, level);
+  }
+  if (worst) return { kind: "level", level: worst };
+  if (ADVISORY_PATTERN.test(raw)) return { kind: "none" };
+  return { kind: "unknown" };
 }
 
-function highestLevel(a: string | null, b: string | null): string | null {
-  const aScore = LEVEL_ORDER[a ?? ""] ?? 0;
-  const bScore = LEVEL_ORDER[b ?? ""] ?? 0;
-  if (aScore >= bScore) return a;
-  return b;
+function highestLevel(a: FireLevel | null, b: FireLevel): FireLevel {
+  if (a === null) return b;
+  return LEVEL_ORDER[b] > LEVEL_ORDER[a] ? b : a;
 }
 
 async function fetchUsfsRestrictions(
@@ -61,17 +99,23 @@ async function fetchUsfsRestrictions(
       };
     }
 
-    let worstLevel: string | null = null;
+    let worstLevel: FireLevel | null = null;
     let affectedArea: string | null = null;
+    let hasUnparseable = false;
     for (const f of features) {
       const attrs = f.attributes;
-      const rawLevel = attrs.RESTRICTI1 ?? attrs.STAGE ?? null;
-      const level = parseLevel(rawLevel);
-      if (highestLevel(level, worstLevel) === level && level !== null) {
-        worstLevel = level;
+      const parsed = parseLevel(attrs.RESTRICTI1 ?? attrs.STAGE ?? null);
+      if (parsed.kind === "unknown") hasUnparseable = true;
+      if (parsed.kind !== "level") continue;
+      const next = highestLevel(worstLevel, parsed.level);
+      if (next !== worstLevel) {
+        worstLevel = next;
         affectedArea = attrs.FORESTNAME ?? attrs.UNITNAME ?? null;
       }
     }
+
+    // Restriction text we can't interpret is unknown, never an all-clear.
+    if (worstLevel === null && hasUnparseable) return null;
 
     return {
       hasActiveRestriction: worstLevel !== null,

@@ -4,18 +4,21 @@ import { fetchWeatherForCoords } from "./weatherGov";
 import { fetchFireRestrictions } from "./fireRestrictions";
 import { fetchNearbyFacilities } from "./ridb";
 
-export type { LiveConditions, WeatherCondition, FireRestriction, RidbFacility } from "./types";
+export type { LiveConditions, WeatherCondition, FireLevel, FireRestriction, RidbFacility } from "./types";
 
-const NO_COORDS: LiveConditions = {
-  weather: null,
-  fire: null,
-  nearbyFacilities: [],
-  fetchedAt: new Date().toISOString(),
-  hasError: false,
-};
+/** Built per call so `fetchedAt` is current and callers never share an object. */
+export function noCoordsConditions(): LiveConditions {
+  return {
+    weather: null,
+    fire: null,
+    nearbyFacilities: [],
+    fetchedAt: new Date().toISOString(),
+    hasError: false,
+  };
+}
 
 export async function fetchLiveConditions(zone: TripZone): Promise<LiveConditions> {
-  if (!zone.coordinates) return NO_COORDS;
+  if (!zone.coordinates) return noCoordsConditions();
 
   const { lat, lng } = zone.coordinates;
   const fetchedAt = new Date().toISOString();

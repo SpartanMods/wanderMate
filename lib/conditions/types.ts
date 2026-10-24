@@ -7,10 +7,12 @@ export type WeatherCondition = {
   fetchedAt: string;
 };
 
+export type FireLevel = "Stage 1" | "Stage 2" | "Stage 3" | "Closure";
+
 export type FireRestriction = {
   hasActiveRestriction: boolean;
-  /** "Stage 1", "Stage 2", "Closure", etc. — null when no active restriction */
-  restrictionLevel: string | null;
+  /** Null when no active restriction */
+  restrictionLevel: FireLevel | null;
   affectedArea: string | null;
   source: "usfs" | "blm";
   fetchedAt: string;
