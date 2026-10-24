@@ -1,8 +1,8 @@
 import type { WeatherCondition } from "./types";
 
 const BASE = "https://api.weather.gov";
-/** NWS requires a reachable contact in the User-Agent. Falls back to the repo URL. */
-const DEFAULT_NWS_CONTACT = "https://github.com/SpartanMods/wanderMate";
+/** NWS requires a reachable contact in the User-Agent; this is the project inbox. */
+const DEFAULT_NWS_CONTACT = "wandermate@gmail.com";
 
 function userAgent(): string {
   const contact = process.env.NWS_USER_AGENT_CONTACT || DEFAULT_NWS_CONTACT;
