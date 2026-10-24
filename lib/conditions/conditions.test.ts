@@ -99,9 +99,20 @@ test("fire: no features from either source = no active restriction", async () =>
 test("fire: unparseable USFS text is unknown, not an all-clear", async () => {
   stubFetch([
     { match: isUsfs, body: fx.usfsUnparseable },
-    { match: isBlm, status: 500 },
+    { match: isBlm, body: fx.blmNone },
   ]);
   assert.equal(await fetchFireRestrictions(LAT, LNG), null);
+});
+
+test("fire: BLM is skipped until #11 lands", async () => {
+  const fetchMock = stubFetch([
+    { match: isUsfs, body: fx.usfsNone },
+    { match: isBlm, body: fx.blmNone },
+  ]);
+  const result = await fetchFireRestrictions(LAT, LNG);
+  assert.equal(result?.source, "usfs");
+  const blmCalls = fetchMock.mock.calls.filter((c) => isBlm(String(c.arguments[0])));
+  assert.equal(blmCalls.length, 0);
 });
 
 test("fire: both sources failing returns null", async () => {
@@ -153,6 +164,7 @@ test("live conditions: a failing source doesn't block the others", async () => {
   assert.equal(result.weather, null);
   assert.equal(result.fire?.restrictionLevel, "Stage 2");
   assert.equal(result.nearbyFacilities.length, 1);
+  assert.equal(result.unavailableReason, null);
 });
 
 test("live conditions: zone without coordinates makes no requests", async () => {
@@ -161,6 +173,7 @@ test("live conditions: zone without coordinates makes no requests", async () => 
   const result = await fetchLiveConditions(zone);
   assert.equal(result.weather, null);
   assert.equal(result.fire, null);
+  assert.equal(result.unavailableReason, "no_coordinates");
   assert.equal(fetchMock.mock.callCount(), 0);
 });
 

@@ -7,7 +7,10 @@ export type WeatherCondition = {
   fetchedAt: string;
 };
 
-export type FireLevel = "Stage 1" | "Stage 2" | "Stage 3" | "Closure";
+/** "Stage 2 (partial)" = a Stage 2 order with exemptions (e.g. gas stoves allowed). */
+export type FireLevel = "Stage 1" | "Stage 2 (partial)" | "Stage 2" | "Stage 3" | "Closure";
+
+export type ConditionsUnavailableReason = "no_coordinates";
 
 export type FireRestriction = {
   hasActiveRestriction: boolean;
@@ -36,4 +39,6 @@ export type LiveConditions = {
   fetchedAt: string;
   /** True if at least one source returned an error */
   hasError: boolean;
+  /** Set when live conditions were not fetched at all; null otherwise */
+  unavailableReason: ConditionsUnavailableReason | null;
 };

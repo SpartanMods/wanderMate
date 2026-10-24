@@ -35,7 +35,7 @@ schemas — use fixtures and say what is unverified.
 - **Zones:** Static `data/tripZones.ts` for Phase 1 reads; also seeded to Supabase `zones` table
 - **Field Reports:** Renamed from "journal entries" — private by default
 - **Monetization:** Freemium; pro tier gates saved trips, field reports, offline cards
-- **Live fire conditions (#13):** callouts + user filter (own `fire=` query param, hides nothing by default) + graduated ranking penalty (Stage 1 −5, Stage 2 −12, Closure −30, Unknown 0). Batch-fetch all eligible zones concurrently, show "Loading live data…", rank once after all settle. 10s timeout per request; weather.gov's two calls share one 10s limit. Timeout/error = unknown.
+- **Live fire conditions (#13):** callouts + user filter (own `fire=` query param, hides nothing by default) + graduated ranking penalty (Stage 1 −5, Stage 2 (partial, i.e. with exemptions like gas stoves) −7.5, Stage 2 −12, Stage 3 / Closure −30, Unknown 0). BLM fire check is disabled (`BLM_CHECK_ENABLED`) until #11 lands. Batch-fetch all eligible zones concurrently, show "Loading live data…", rank once after all settle. 10s timeout per request; weather.gov's two calls share one 10s limit. Timeout/error = unknown.
 - **Missing must-have penalty (#19):** −10 per activity (was −20), cap stays −45
 - **Task 8 fix order:** #14/#15/#17 → #12 → #11 → #18/#19 → #13/#16 → Task 9
 - **Test runner:** Node built-in `node:test` — run individual files: `node --import ./scripts/register-loader.mjs --test lib/<file>.test.ts`

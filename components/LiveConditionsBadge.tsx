@@ -1,4 +1,12 @@
-import type { LiveConditions } from "@/lib/conditions";
+import type { ConditionsUnavailableReason, LiveConditions } from "@/lib/conditions";
+
+const UNAVAILABLE_REASON_TEXT: Record<ConditionsUnavailableReason, string> = {
+  no_coordinates: "No map location for this zone yet, so live conditions can't be checked.",
+};
+
+const UNAVAILABLE_REASON_SHORT: Record<ConditionsUnavailableReason, string> = {
+  no_coordinates: "Conditions unavailable (no map location)",
+};
 
 /** Full conditions display — used on zone detail pages. */
 export function LiveConditionsBadge({
@@ -10,6 +18,14 @@ export function LiveConditionsBadge({
     return (
       <p className="text-xs text-sand-200/40">
         Conditions unavailable. Verify before you go.
+      </p>
+    );
+  }
+
+  if (conditions.unavailableReason) {
+    return (
+      <p className="text-xs text-sand-200/40">
+        {UNAVAILABLE_REASON_TEXT[conditions.unavailableReason]} Verify before you go.
       </p>
     );
   }
@@ -135,6 +151,17 @@ export function LiveConditionsCompact({
   if (!conditions) {
     return (
       <span className="text-xs text-sand-200/30">Conditions unavailable</span>
+    );
+  }
+
+  if (conditions.unavailableReason) {
+    return (
+      <span
+        className="text-xs text-sand-200/30"
+        title={UNAVAILABLE_REASON_TEXT[conditions.unavailableReason]}
+      >
+        {UNAVAILABLE_REASON_SHORT[conditions.unavailableReason]}
+      </span>
     );
   }
 

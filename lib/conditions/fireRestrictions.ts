@@ -6,16 +6,31 @@ const USFS_FIRE_URL =
 const BLM_CLOSURE_URL =
   "https://gis.blm.gov/arcgis/rest/services/lands_and_realty/BLM_National_Conservation_Lands/FeatureServer/0/query";
 
+/**
+ * The BLM source queries the wrong dataset and always reports "no
+ * restriction" (#11). Skipped until #11 lands so it can't mask USFS
+ * results with a false all-clear.
+ */
+const BLM_CHECK_ENABLED = false;
+
 const LEVEL_ORDER: Record<FireLevel, number> = {
   "Stage 1": 1,
+  "Stage 2 (partial)": 1.5,
   "Stage 2": 2,
   "Stage 3": 3,
   Closure: 3,
 };
 
-/** Phrases meaning a restriction is not (or no longer) in effect. Checked first. */
-const NO_RESTRICTION_PATTERN =
-  /\b(lifted|rescinded|rescind|no (fire )?restrictions?|none)\b/i;
+/** Splits restriction text into clauses so "lifted" only applies to its own clause. */
+const CLAUSE_SEPARATOR = /[;,.\u2013\u2014]|\s-\s/;
+
+const LIFTED_PATTERN = /\b(lifted|rescinded|rescind)\b/i;
+
+/** "No restrictions" on its own; "no restrictions on/for X" is an exemption instead. */
+const NO_RESTRICTION_PATTERN = /\b(no (fire )?restrictions?\b(?!\s+(on|for)\b)|none)\b/i;
+
+/** Exemption within a stage order, e.g. "Stage 2 - no restrictions on gas stoves". */
+const EXEMPTION_PATTERN = /\bno (fire )?restrictions? (on|for)\b/i;
 
 /** Advisory-only language; counts as no restriction when no stage is named. */
 const ADVISORY_PATTERN = /\bprevention\b/i;
@@ -42,22 +57,48 @@ export type ParsedFireLevel =
   | { kind: "none" }
   | { kind: "unknown" };
 
+function stagesIn(clause: string): FireLevel[] {
+  return Array.from(clause.matchAll(STAGE_PATTERN))
+    .map((m) => STAGE_TOKEN_TO_LEVEL[m[1].toLowerCase()])
+    .filter((level): level is FireLevel => level !== undefined);
+}
+
 /**
  * Fuzzy-parses a raw restriction value. Only an explicit stage phrase or
  * closure language counts as a restriction; a bare digit never does.
+ * A lifted stage cancels every mention of that same stage, so
+ * "Stage 2 in effect; Stage 1 lifted" is still Stage 2.
  */
 export function parseLevel(raw: string | null | undefined): ParsedFireLevel {
   if (!raw || raw.trim() === "") return { kind: "unknown" };
-  if (NO_RESTRICTION_PATTERN.test(raw)) return { kind: "none" };
-  if (CLOSURE_PATTERN.test(raw)) return { kind: "level", level: "Closure" };
+
+  const clauses = raw.split(CLAUSE_SEPARATOR);
+  const lifted = new Set<FireLevel>();
+  let anyLifted = false;
+  for (const clause of clauses) {
+    if (!LIFTED_PATTERN.test(clause)) continue;
+    anyLifted = true;
+    for (const level of stagesIn(clause)) lifted.add(level);
+    if (CLOSURE_PATTERN.test(clause)) lifted.add("Closure");
+  }
 
   let worst: FireLevel | null = null;
-  for (const match of Array.from(raw.matchAll(STAGE_PATTERN))) {
-    const level = STAGE_TOKEN_TO_LEVEL[match[1].toLowerCase()];
-    if (level) worst = highestLevel(worst, level);
+  for (const clause of clauses) {
+    if (LIFTED_PATTERN.test(clause)) continue;
+    const active: FireLevel[] = stagesIn(clause);
+    if (CLOSURE_PATTERN.test(clause)) active.push("Closure");
+    for (const level of active) {
+      if (!lifted.has(level)) worst = highestLevel(worst, level);
+    }
+  }
+
+  if (worst === "Stage 2" && EXEMPTION_PATTERN.test(raw)) {
+    return { kind: "level", level: "Stage 2 (partial)" };
   }
   if (worst) return { kind: "level", level: worst };
-  if (ADVISORY_PATTERN.test(raw)) return { kind: "none" };
+  if (anyLifted || NO_RESTRICTION_PATTERN.test(raw) || ADVISORY_PATTERN.test(raw)) {
+    return { kind: "none" };
+  }
   return { kind: "unknown" };
 }
 
@@ -175,8 +216,8 @@ async function fetchBlmClosures(
 
 /**
  * Returns the most severe active fire restriction within ~80 miles.
- * Checks USFS fire restrictions first, then BLM closures.
- * Returns null if both sources fail.
+ * Checks USFS fire restrictions first, then BLM closures (BLM currently
+ * skipped, see BLM_CHECK_ENABLED). Returns null if no source answered.
  */
 export async function fetchFireRestrictions(
   lat: number,
@@ -184,7 +225,7 @@ export async function fetchFireRestrictions(
 ): Promise<FireRestriction | null> {
   const [usfs, blm] = await Promise.allSettled([
     fetchUsfsRestrictions(lat, lng),
-    fetchBlmClosures(lat, lng),
+    BLM_CHECK_ENABLED ? fetchBlmClosures(lat, lng) : Promise.resolve(null),
   ]);
 
   const usfsResult = usfs.status === "fulfilled" ? usfs.value : null;

@@ -4,7 +4,14 @@ import { fetchWeatherForCoords } from "./weatherGov";
 import { fetchFireRestrictions } from "./fireRestrictions";
 import { fetchNearbyFacilities } from "./ridb";
 
-export type { LiveConditions, WeatherCondition, FireLevel, FireRestriction, RidbFacility } from "./types";
+export type {
+  ConditionsUnavailableReason,
+  LiveConditions,
+  WeatherCondition,
+  FireLevel,
+  FireRestriction,
+  RidbFacility,
+} from "./types";
 
 /** Built per call so `fetchedAt` is current and callers never share an object. */
 export function noCoordsConditions(): LiveConditions {
@@ -14,6 +21,7 @@ export function noCoordsConditions(): LiveConditions {
     nearbyFacilities: [],
     fetchedAt: new Date().toISOString(),
     hasError: false,
+    unavailableReason: "no_coordinates",
   };
 }
 
@@ -39,5 +47,6 @@ export async function fetchLiveConditions(zone: TripZone): Promise<LiveCondition
       weather.status === "rejected" ||
       fire.status === "rejected" ||
       nearbyFacilities.status === "rejected",
+    unavailableReason: null,
   };
 }

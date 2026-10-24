@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseLevel, type ParsedFireLevel } from "@/lib/conditions/fireRestrictions";
+import type { FireLevel } from "@/lib/conditions/types";
 
-const level = (l: "Stage 1" | "Stage 2" | "Stage 3" | "Closure"): ParsedFireLevel => ({
+const level = (l: FireLevel): ParsedFireLevel => ({
   kind: "level",
   level: l,
 });
@@ -33,6 +34,17 @@ const cases: [string | null | undefined, ParsedFireLevel][] = [
   ["No restrictions", NONE],
   ["None", NONE],
   ["Fire Prevention", NONE],
+  // "Lifted" only cancels the same stage; a different active stage remains.
+  ["Stage 2 in effect; Stage 1 lifted", level("Stage 2")],
+  ["Stage 2 lifted, Stage 1 in effect", level("Stage 1")],
+  ["Stage 1 in effect. Stage 1 lifted 10/01", NONE],
+  ["Closure lifted", NONE],
+  // Stage 2 with an exemption is its own, less severe level.
+  ["Stage 2 - no restrictions on gas stoves", level("Stage 2 (partial)")],
+  ["Stage 2; no restrictions for pressurized stoves", level("Stage 2 (partial)")],
+  ["Stage 1 - no restrictions on gas stoves", level("Stage 1")],
+  // Accepted: "closed" in a Stage 1 order reads as Closure.
+  ["Stage 1: campgrounds closed to campfires", level("Closure")],
   // An explicit stage beats advisory wording.
   ["Fire Prevention Order: Stage 1", level("Stage 1")],
   // Empty / missing input is unknown.
