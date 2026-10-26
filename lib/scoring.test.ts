@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { hasHardConstraintViolation } from "@/lib/scoring";
+import { hasHardConstraintViolation, missingMustHavePenalty } from "@/lib/scoring";
 import type { TripPreferences, TripZone } from "@/lib/types";
 
 function basePrefs(overrides: Partial<TripPreferences> = {}): TripPreferences {
@@ -125,4 +125,16 @@ test("hard constraint: OHV must-have + zone OHV legal = no hard fail", () => {
   });
   const zone = baseZone();
   assert.equal(hasHardConstraintViolation(prefs, zone), false);
+});
+
+test("missing must-have penalty: -10 per activity", () => {
+  assert.equal(missingMustHavePenalty(0), 0);
+  assert.equal(missingMustHavePenalty(1), 10);
+  assert.equal(missingMustHavePenalty(2), 20);
+  assert.equal(missingMustHavePenalty(4), 40);
+});
+
+test("missing must-have penalty: capped at 45 from 5 missing", () => {
+  assert.equal(missingMustHavePenalty(5), 45);
+  assert.equal(missingMustHavePenalty(8), 45);
 });

@@ -12,6 +12,7 @@ import {
   ACTIVITY_WEIGHT_MULTIPLIER,
   CAMPING_LABELS,
   RISK_LABELS,
+  MISSING_MUST_HAVE_PENALTY,
   SCORE_WEIGHTS,
   SKILL_RANK,
   VEHICLE_LABELS,
@@ -515,6 +516,12 @@ export function getStrongMustHaves(
 // Penalties + hidden-gem boost
 // ---------------------------------------------------------------------------
 
+/** Points lost for `count` missing must-have activities, capped. */
+export function missingMustHavePenalty(count: number): number {
+  const { perActivity, cap } = MISSING_MUST_HAVE_PENALTY;
+  return Math.min(cap, count * perActivity);
+}
+
 function computePenalties(prefs: TripPreferences, trip: TripZone): number {
   let penalty = 0;
 
@@ -524,11 +531,9 @@ function computePenalties(prefs: TripPreferences, trip: TripZone): number {
     penalty -= Math.min(40, conflicts.length * 15);
   }
 
-  // Missing must-have activities (rating <= 1): -20 each, capped at -45.
+  // Missing must-have activities (rating <= 1).
   const missing = getMissingMustHaves(prefs, trip);
-  if (missing.length > 0) {
-    penalty -= Math.min(45, missing.length * 20);
-  }
+  penalty -= missingMustHavePenalty(missing.length);
 
   // Present-but-weak must-haves (rating 2): -8 each.
   const weak = getWeakMustHaves(prefs, trip);

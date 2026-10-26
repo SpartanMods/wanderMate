@@ -1,5 +1,6 @@
 import type { TripPreferences } from "./types";
 import { decodePrefs } from "./prefHash";
+import { validatePreferences } from "./validation";
 
 const LEGACY_KEY = "wandermate:preferences";
 
@@ -27,7 +28,9 @@ export function loadPreferences(): TripPreferences | null {
   if (p) return decodePrefs(p);
   try {
     const raw = window.localStorage.getItem(LEGACY_KEY);
-    return raw ? (JSON.parse(raw) as TripPreferences) : null;
+    if (!raw) return null;
+    const result = validatePreferences(JSON.parse(raw));
+    return result.success ? result.data : null;
   } catch {
     return null;
   }
