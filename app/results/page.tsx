@@ -19,7 +19,6 @@ import { loadPreferences } from "@/lib/storage";
 import type { LiveConditions } from "@/lib/conditions";
 import type { TripPreferences, TripRecommendation } from "@/lib/types";
 
-const STRONG_THRESHOLD = 68;
 const MAX_RESULTS = 7;
 
 export default function ResultsPage() {
@@ -53,15 +52,13 @@ export default function ResultsPage() {
 
   const data = useMemo(() => {
     if (!prefs) return null;
-    const recs = getRecommendations(prefs, tripZones).slice(0, MAX_RESULTS);
-    const strong = recs.filter((r) => r.score >= STRONG_THRESHOLD);
-    return { recs, strong };
+    return { recs: getRecommendations(prefs, tripZones).slice(0, MAX_RESULTS) };
   }, [prefs]);
 
   // Fetch live conditions for all visible result zones in parallel
   useEffect(() => {
     if (!data) return;
-    const list = data.strong.length > 0 ? data.recs : [];
+    const list = data.recs;
     if (list.length === 0) return;
     setConditionsLoading(true);
     Promise.all(
@@ -106,9 +103,11 @@ export default function ResultsPage() {
     );
   }
 
-  const { recs, strong } = data!;
-  const hasStrong = strong.length > 0;
-  const list = hasStrong ? recs : getClosestMatches(prefs, tripZones, 3);
+  // Every zone that passes the hard limits is shown, ranked by score. The
+  // closest-match fallback only applies when no zone passes them at all.
+  const { recs } = data!;
+  const hasMatches = recs.length > 0;
+  const list = hasMatches ? recs : getClosestMatches(prefs, tripZones, 3);
   const top = list[0];
   const rest = list.slice(1);
   const selectedRecs = list.filter((r) => selectedForCompare.has(r.trip.id));
@@ -128,9 +127,9 @@ export default function ResultsPage() {
             Your ranked trips
           </h1>
           <p className="mt-1 text-sand-200/75">
-            {hasStrong
-              ? `${strong.length} strong match${strong.length === 1 ? "" : "es"} out of ${recs.length} zones scored.`
-              : "No strong matches — showing the closest options with warnings."}
+            {hasMatches
+              ? `${recs.length} zone${recs.length === 1 ? "" : "s"} ranked, best match first.`
+              : "No zones fit your hard limits — showing the closest options with warnings."}
           </p>
           <p className="mt-1 text-xs text-basecamp-600">
             {originRecognized
@@ -152,15 +151,15 @@ export default function ResultsPage() {
 
       <SafetyNotice />
 
-      {/* Empty / weak-match coaching */}
-      {!hasStrong && (
+      {/* No-match coaching */}
+      {!hasMatches && (
         <div className="rounded-xl border border-amber-600/40 bg-amber-900/15 p-5">
           <h2 className="text-lg font-bold text-amber-100">
             Your filters are a little tight
           </h2>
           <p className="mt-1 text-sm text-amber-100/80">
-            Nothing cleared a {STRONG_THRESHOLD}+ match. Here&apos;s what&apos;s
-            likely narrowing your results:
+            No zone passed your hard limits (like season or vehicle access).
+            Here&apos;s what&apos;s likely narrowing your results:
           </p>
           <ul className="mt-3 space-y-1.5 text-sm text-amber-50/90">
             {diagnoseRestrictiveness(prefs, tripZones).map((r, i) => (
@@ -242,7 +241,7 @@ export default function ResultsPage() {
         </div>
       ) : (
         comparison && (
-          <TopTripComparison comparison={comparison} isWeakMatchMode={!hasStrong} />
+          <TopTripComparison comparison={comparison} isWeakMatchMode={!hasMatches} />
         )
       )}
 
