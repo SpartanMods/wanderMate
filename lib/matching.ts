@@ -12,13 +12,25 @@ import {
   hasHardConstraintViolation,
 } from "./scoring";
 import type { TripPreferences, TripRecommendation, TripZone } from "./types";
+import { FIRE_STATUS_LABEL, type FireStatus } from "./conditions/fireStatus";
+
+/** Zone id → live fire status. Zones not in the map count as unknown. */
+export type FireStatusByZone = Record<string, FireStatus>;
+
+function fireExplanation(status: FireStatus, firePenalty: number): string | null {
+  if (firePenalty === 0) return null;
+  return `Fire restrictions nearby: ${FIRE_STATUS_LABEL[status]} — ranked lower (${firePenalty} pts).`;
+}
 
 function buildRecommendation(
   prefs: TripPreferences,
-  trip: TripZone
+  trip: TripZone,
+  fireStatus: FireStatus = "unknown"
 ): TripRecommendation {
-  const breakdown = calculateTripScore(prefs, trip);
-  const { whyItMatches, whyItMightNot } = explainMatch(prefs, trip, breakdown);
+  const breakdown = calculateTripScore(prefs, trip, fireStatus);
+  const { whyItMatches, whyItMightNot: baseConcerns } = explainMatch(prefs, trip, breakdown);
+  const fireNote = fireExplanation(fireStatus, breakdown.firePenalty);
+  const whyItMightNot = fireNote ? [fireNote, ...baseConcerns] : baseConcerns;
   return {
     trip,
     score: breakdown.finalScore,
@@ -53,15 +65,16 @@ export function diversifyRecommendations(
 
 /**
  * Primary entry point: ranked, diversified recommendations with hard
- * violations removed.
+ * violations removed. Live fire status, when given, lowers scores (#13).
  */
 export function getRecommendations(
   preferences: TripPreferences,
-  trips: TripZone[]
+  trips: TripZone[],
+  fireByZone: FireStatusByZone = {}
 ): TripRecommendation[] {
   const scored = trips
     .filter((trip) => !hasHardConstraintViolation(preferences, trip))
-    .map((trip) => buildRecommendation(preferences, trip))
+    .map((trip) => buildRecommendation(preferences, trip, fireByZone[trip.id]))
     .sort((a, b) => b.score - a.score);
 
   return diversifyRecommendations(scored);

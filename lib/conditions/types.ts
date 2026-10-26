@@ -42,3 +42,6 @@ export type LiveConditions = {
   /** Set when live conditions were not fetched at all; null otherwise */
   unavailableReason: ConditionsUnavailableReason | null;
 };
+
+/** Zone id → live conditions, as returned by GET /api/conditions?ids=… */
+export type ConditionsByZone = Record<string, LiveConditions>;

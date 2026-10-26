@@ -11,6 +11,7 @@ import type {
   SkillLevel,
   VehicleRequirement,
 } from "./types";
+import type { FireLevel } from "./conditions/types";
 
 export const DEFAULT_STARTING_LOCATION = "Denver, CO";
 export const LAUNCH_REGION_LABEL = "MVP region: Colorado, Wyoming & Utah";
@@ -225,6 +226,16 @@ export const MISSING_MUST_HAVE_PENALTY = {
   perActivity: 10,
   cap: 45,
 } as const;
+
+// Live fire-restriction ranking penalty, in points, by level (#13). Stage 2
+// (partial) is 1.5x Stage 1; Stage 3 matches Closure. None / unknown cost 0.
+export const FIRE_PENALTY: Record<FireLevel, number> = {
+  "Stage 1": 5,
+  "Stage 2 (partial)": 7.5,
+  "Stage 2": 12,
+  "Stage 3": 30,
+  Closure: 30,
+};
 
 // Short, lower-case labels for risk tolerance, used in explanations.
 export const RISK_LABELS: Record<1 | 2 | 3 | 4, string> = {

@@ -1,3 +1,4 @@
+import { UPSTREAM_TIMEOUT_MS } from "./config";
 import type { RidbFacility } from "./types";
 
 const RIDB_BASE = "https://ridb.recreation.gov/api/v1";
@@ -24,7 +25,8 @@ export async function fetchNearbyFacilities(
   lat: number,
   lng: number,
   radiusMiles = 50,
-  limit = 5
+  limit = 5,
+  timeoutMs: number = UPSTREAM_TIMEOUT_MS
 ): Promise<RidbFacility[]> {
   const key = apiKey();
   if (!key) return [];
@@ -39,6 +41,7 @@ export async function fetchNearbyFacilities(
     const res = await fetch(url, {
       headers: { apikey: key, Accept: "application/json" },
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return [];
 

@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { hasHardConstraintViolation, missingMustHavePenalty } from "@/lib/scoring";
+import {
+  calculateTripScore,
+  firePenaltyFor,
+  hasHardConstraintViolation,
+  missingMustHavePenalty,
+} from "@/lib/scoring";
 import type { TripPreferences, TripZone } from "@/lib/types";
 
 function basePrefs(overrides: Partial<TripPreferences> = {}): TripPreferences {
@@ -137,4 +142,30 @@ test("missing must-have penalty: -10 per activity", () => {
 test("missing must-have penalty: capped at 45 from 5 missing", () => {
   assert.equal(missingMustHavePenalty(5), 45);
   assert.equal(missingMustHavePenalty(8), 45);
+});
+
+test("fire penalty: magnitudes per level, none/unknown cost nothing", () => {
+  assert.equal(firePenaltyFor("none"), 0);
+  assert.equal(firePenaltyFor("unknown"), 0);
+  assert.equal(firePenaltyFor("Stage 1"), -5);
+  assert.equal(firePenaltyFor("Stage 2 (partial)"), -7.5);
+  assert.equal(firePenaltyFor("Stage 2"), -12);
+  assert.equal(firePenaltyFor("Stage 3"), -30);
+  assert.equal(firePenaltyFor("Closure"), -30);
+});
+
+test("fire penalty: stricter restriction = lower final score", () => {
+  const prefs = basePrefs({ selectedActivities: { hiking: "important" } });
+  const zone = baseZone();
+  const score = (s: Parameters<typeof calculateTripScore>[2]) =>
+    calculateTripScore(prefs, zone, s).finalScore;
+  const none = score("none");
+  assert.ok(none > 30, "base score must leave room for the largest penalty");
+  assert.equal(score("unknown"), none);
+  assert.equal(score("Stage 1"), none - 5);
+  assert.equal(score("Stage 2"), none - 12);
+  assert.equal(score("Closure"), none - 30);
+  const partial = score("Stage 2 (partial)");
+  assert.ok(partial <= none - 7 && partial >= none - 8, "-7.5 rounds within the final score");
+  assert.equal(calculateTripScore(prefs, zone, "Stage 2").firePenalty, -12);
 });

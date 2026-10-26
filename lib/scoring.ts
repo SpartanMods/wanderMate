@@ -11,6 +11,7 @@ import {
   ACTIVITY_LABELS,
   ACTIVITY_WEIGHT_MULTIPLIER,
   CAMPING_LABELS,
+  FIRE_PENALTY,
   RISK_LABELS,
   MISSING_MUST_HAVE_PENALTY,
   SCORE_WEIGHTS,
@@ -25,6 +26,7 @@ import type {
   TripZone,
   VehicleRequirement,
 } from "./types";
+import type { FireStatus } from "./conditions/fireStatus";
 import { getEffectiveDriveHours, resolveOrigin } from "./geo";
 import { clamp, inferSeason } from "./utils";
 
@@ -516,6 +518,12 @@ export function getStrongMustHaves(
 // Penalties + hidden-gem boost
 // ---------------------------------------------------------------------------
 
+/** Score deduction for a zone's live fire status: 0 for none / unknown. */
+export function firePenaltyFor(status: FireStatus): number {
+  if (status === "none" || status === "unknown") return 0;
+  return -FIRE_PENALTY[status];
+}
+
 /** Points lost for `count` missing must-have activities, capped. */
 export function missingMustHavePenalty(count: number): number {
   const { perActivity, cap } = MISSING_MUST_HAVE_PENALTY;
@@ -675,7 +683,8 @@ function computeHiddenGemBoost(prefs: TripPreferences, trip: TripZone): number {
 
 export function calculateTripScore(
   prefs: TripPreferences,
-  trip: TripZone
+  trip: TripZone,
+  fireStatus: FireStatus = "unknown"
 ): ScoreBreakdown {
   const activityFit = scoreActivities(prefs, trip);
   const driveTimeFit = scoreDriveTime(prefs, trip);
@@ -691,6 +700,7 @@ export function calculateTripScore(
   const penalties = computePenalties(prefs, trip);
   const riskPenalty = computeRiskPenalty(prefs, trip);
   const hiddenGemBoost = computeHiddenGemBoost(prefs, trip);
+  const firePenalty = firePenaltyFor(fireStatus);
 
   const base =
     activityFit +
@@ -706,7 +716,7 @@ export function calculateTripScore(
     riskFit;
 
   const finalScore = clamp(
-    Math.round(base + penalties + riskPenalty + hiddenGemBoost),
+    Math.round(base + penalties + riskPenalty + hiddenGemBoost + firePenalty),
     0,
     100
   );
@@ -724,6 +734,7 @@ export function calculateTripScore(
     seasonFit: Math.round(seasonFit * 10) / 10,
     riskFit: Math.round(riskFit * 10) / 10,
     penalties,
+    firePenalty,
     riskPenalty,
     hiddenGemBoost,
     finalScore,
