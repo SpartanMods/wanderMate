@@ -4,16 +4,23 @@
  */
 
 import { z } from "zod";
-import type { TripPreferences } from "./types";
+import { ACTIVITIES } from "./constants";
+import type { ActivityKey, TripPreferences } from "./types";
 
 const activityWeight = z.enum(["nice_to_have", "important", "must_have"]);
+
+// Only known activities are accepted, so a crafted link can't add an
+// activity no zone has (which would count as a missing must-have everywhere).
+const activityKey = z.enum(
+  ACTIVITIES.map((a) => a.key) as [ActivityKey, ...ActivityKey[]]
+);
 
 export const tripPreferencesSchema = z.object({
   startingLocation: z.string().min(1, "Add a starting location"),
   maxDriveTimeHours: z.number().min(1).max(6),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  selectedActivities: z.record(z.string(), activityWeight),
+  selectedActivities: z.record(activityKey, activityWeight),
   experienceLevel: z.enum(["beginner", "intermediate", "advanced", "expert"]),
   offGridPreference: z.union([
     z.literal(1),

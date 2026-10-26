@@ -74,3 +74,11 @@ test("decodePrefs returns null for non-object JSON", () => {
   assert.equal(decodePrefs(encodeRaw("hello")), null);
   assert.equal(decodePrefs(encodeRaw(null)), null);
 });
+
+test("decodePrefs returns null for an unknown activity", () => {
+  const crafted = {
+    ...sample,
+    selectedActivities: { ...sample.selectedActivities, bogusKey: "must_have" },
+  };
+  assert.equal(decodePrefs(encodeRaw(crafted)), null);
+});
