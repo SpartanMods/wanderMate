@@ -23,7 +23,7 @@ schemas — use fixtures and say what is unverified.
 | 5 | URL hash preference state (replace localStorage) | ✅ Done |
 | 6 | Results page rebuilt (5–7 zones, user-select comparison) | ✅ Done |
 | 7 | Public zone detail pages `/zones/[id]` | ✅ Done |
-| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🟡 Shipped; fixes in progress (#11–#19) |
+| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🟡 Shipped; fixes in progress — done: #12 #14 #15 #17 #18 #19 #30 · open: #11 #13 #16 #28 |
 | 9 | Auth pages (login, magic link, Google OAuth, callback) | ⬜ Pending |
 | 10 | Save Trip + Field Report CRUD + dashboard | ⬜ Pending |
 | 11 | Profile baseline preferences pre-fill planner form | ⬜ Pending |
@@ -37,7 +37,10 @@ schemas — use fixtures and say what is unverified.
 - **Monetization:** Freemium; pro tier gates saved trips, field reports, offline cards
 - **Live fire conditions (#13):** callouts + user filter (own `fire=` query param, hides nothing by default) + graduated ranking penalty (Stage 1 −5, Stage 2 (partial, i.e. with exemptions like gas stoves) −7.5, Stage 2 −12, Stage 3 / Closure −30, Unknown 0). BLM fire check is disabled (`BLM_CHECK_ENABLED`) until #11 lands. Batch-fetch all eligible zones concurrently, show "Loading live data…", rank once after all settle. 10s timeout per request; weather.gov's two calls share one 10s limit. Timeout/error = unknown.
 - **Missing must-have penalty (#19):** −10 per activity (was −20), cap stays −45
-- **Task 8 fix order:** #14/#15/#17 → #12 → #11 → #18/#19 → #13/#16 → Task 9
+- **Results list (#29):** no score cutoff — every zone passing the hard constraints is shown (up to 7), ranked; per-card quality labels flag weak matches. Closest-match fallback only when nothing passes the hard constraints.
+- **Preferences in URLs (#18):** `decodePrefs` validates with the Zod schema; activity keys limited to the known list.
+- **Supabase env (#30):** middleware passes through when Supabase env vars are missing; protected routes (Task 9+) must deny access themselves when Supabase is unavailable.
+- **Task 8 fix order:** ~~#14/#15/#17~~ → ~~#12~~ → #11 (blocked on #20) → ~~#18/#19~~ → #13/#16 → Task 9
 - **Test runner:** Node built-in `node:test` — run individual files: `node --import ./scripts/register-loader.mjs --test lib/<file>.test.ts`
 
 ## Supabase Schema (applied)
