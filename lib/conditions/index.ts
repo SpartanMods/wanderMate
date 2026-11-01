@@ -5,6 +5,7 @@ import { fetchFireRestrictions } from "./fireRestrictions";
 import { fetchNearbyFacilities } from "./ridb";
 
 export type {
+  ConditionsByZone,
   ConditionsUnavailableReason,
   LiveConditions,
   WeatherCondition,

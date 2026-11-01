@@ -84,8 +84,7 @@ export function RecommendationCard({
   isSelectedForCompare = false,
   onToggleCompare,
   compareCount = 0,
-  conditions = null,
-  conditionsLoading = false,
+  conditions,
 }: {
   rec: TripRecommendation;
   rank: number;
@@ -94,8 +93,8 @@ export function RecommendationCard({
   isSelectedForCompare?: boolean;
   onToggleCompare?: () => void;
   compareCount?: number;
+  /** undefined = live data not applicable; null = fetched but unavailable (unknown). */
   conditions?: LiveConditions | null;
-  conditionsLoading?: boolean;
 }) {
   const [open, setOpen] = useState(featured);
   const originShort = originLabel.split(",")[0];
@@ -190,12 +189,9 @@ export function RecommendationCard({
         </div>
 
         {/* Live conditions */}
-        {(conditions !== null || conditionsLoading) && (
+        {conditions !== undefined && (
           <div className="mt-3">
-            <LiveConditionsCompact
-              conditions={conditions}
-              loading={conditionsLoading && conditions === null}
-            />
+            <LiveConditionsCompact conditions={conditions} />
           </div>
         )}
 

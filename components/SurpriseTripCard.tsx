@@ -1,5 +1,7 @@
 import { Badge } from "./Badge";
 import { DataQualitySummary } from "./DataQuality";
+import { LiveConditionsCompact } from "./LiveConditionsBadge";
+import type { LiveConditions } from "@/lib/conditions";
 import {
   ACTIVITY_LABELS,
   VEHICLE_LABELS,
@@ -18,9 +20,12 @@ function topActivities(trip: TripRecommendation["trip"], n = 4): string[] {
 export function SurprisePrimaryCard({
   rec,
   explanation,
+  conditions,
 }: {
   rec: TripRecommendation;
   explanation: string;
+  /** undefined = not looked up; null = looked up but unavailable. */
+  conditions?: LiveConditions | null;
 }) {
   const { trip, score, qualityLabel } = rec;
   return (
@@ -68,6 +73,16 @@ export function SurprisePrimaryCard({
           <Stat label="Vehicle" value={VEHICLE_LABELS[trip.vehicleRequirement]} />
         </div>
 
+        {conditions !== undefined && (
+          <div className="mt-4">
+            <LiveConditionsCompact conditions={conditions} />
+          </div>
+        )}
+
+        {rec.breakdown.firePenalty !== 0 && (
+          <p className="mt-2 text-xs text-amber-200/80">{rec.whyItMightNot[0]}</p>
+        )}
+
         <DataQualitySummary trip={trip} />
 
         {trip.watchouts.length > 0 && (
@@ -92,7 +107,13 @@ export function SurprisePrimaryCard({
   );
 }
 
-export function SurpriseBackupCard({ rec }: { rec: TripRecommendation }) {
+export function SurpriseBackupCard({
+  rec,
+  conditions,
+}: {
+  rec: TripRecommendation;
+  conditions?: LiveConditions | null;
+}) {
   const { trip, score } = rec;
   return (
     <article className="card p-4">
@@ -104,6 +125,11 @@ export function SurpriseBackupCard({ rec }: { rec: TripRecommendation }) {
         {trip.region} · {trip.state}
       </p>
       <p className="mt-2 line-clamp-3 text-sm text-sand-200/80">{trip.summary}</p>
+      {conditions !== undefined && (
+        <div className="mt-2">
+          <LiveConditionsCompact conditions={conditions} />
+        </div>
+      )}
       <div className="mt-2 flex flex-wrap gap-1.5">
         {topActivities(trip, 3).map((a) => (
           <Badge key={a} tone="neutral">

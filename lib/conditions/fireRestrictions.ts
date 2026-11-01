@@ -1,3 +1,4 @@
+import { UPSTREAM_TIMEOUT_MS } from "./config";
 import type { FireLevel, FireRestriction } from "./types";
 
 const USFS_FIRE_URL =
@@ -109,7 +110,8 @@ function highestLevel(a: FireLevel | null, b: FireLevel): FireLevel {
 
 async function fetchUsfsRestrictions(
   lat: number,
-  lng: number
+  lng: number,
+  timeoutMs: number
 ): Promise<FireRestriction | null> {
   try {
     const url =
@@ -124,6 +126,7 @@ async function fetchUsfsRestrictions(
     const res = await fetch(url, {
       headers: { Accept: "application/json" },
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -172,7 +175,8 @@ async function fetchUsfsRestrictions(
 
 async function fetchBlmClosures(
   lat: number,
-  lng: number
+  lng: number,
+  timeoutMs: number
 ): Promise<FireRestriction | null> {
   try {
     const url =
@@ -187,6 +191,7 @@ async function fetchBlmClosures(
     const res = await fetch(url, {
       headers: { Accept: "application/json" },
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -221,11 +226,12 @@ async function fetchBlmClosures(
  */
 export async function fetchFireRestrictions(
   lat: number,
-  lng: number
+  lng: number,
+  timeoutMs: number = UPSTREAM_TIMEOUT_MS
 ): Promise<FireRestriction | null> {
   const [usfs, blm] = await Promise.allSettled([
-    fetchUsfsRestrictions(lat, lng),
-    BLM_CHECK_ENABLED ? fetchBlmClosures(lat, lng) : Promise.resolve(null),
+    fetchUsfsRestrictions(lat, lng, timeoutMs),
+    BLM_CHECK_ENABLED ? fetchBlmClosures(lat, lng, timeoutMs) : Promise.resolve(null),
   ]);
 
   const usfsResult = usfs.status === "fulfilled" ? usfs.value : null;

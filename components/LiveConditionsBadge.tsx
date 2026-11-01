@@ -1,4 +1,5 @@
 import type { ConditionsUnavailableReason, LiveConditions } from "@/lib/conditions";
+import { FIRE_STATUS_LABEL, fireStatusOf, type FireStatus } from "@/lib/conditions/fireStatus";
 
 const UNAVAILABLE_REASON_TEXT: Record<ConditionsUnavailableReason, string> = {
   no_coordinates: "No map location for this zone yet, so live conditions can't be checked.",
@@ -32,6 +33,9 @@ export function LiveConditionsBadge({
 
   const { weather, fire, nearbyFacilities } = conditions;
   const hasAnyData = weather || fire || nearbyFacilities.length > 0;
+  // Same status mapping as result cards, so both views always agree.
+  const fireStatus = fireStatusOf(conditions);
+  const fireSource = fire ? (fire.source === "usfs" ? "USFS" : "BLM") : null;
 
   if (!hasAnyData) {
     return (
@@ -47,7 +51,7 @@ export function LiveConditionsBadge({
         Live Conditions
       </h2>
 
-      {fire?.hasActiveRestriction && (
+      {fire && fireStatus !== "none" && fireStatus !== "unknown" && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-600/40 bg-amber-900/20 px-3 py-2">
           <span className="mt-0.5 text-amber-400" aria-hidden>
             🔥
@@ -55,27 +59,33 @@ export function LiveConditionsBadge({
           <div>
             <p className="text-sm font-semibold text-amber-200">
               Fire restriction active
-              {fire.restrictionLevel ? ` — ${fire.restrictionLevel}` : ""}
+              {fireStatus === "restriction" ? "" : ` — ${FIRE_STATUS_LABEL[fireStatus]}`}
             </p>
             {fire.affectedArea && (
               <p className="text-xs text-amber-200/70">{fire.affectedArea}</p>
             )}
             <p className="text-xs text-amber-200/50 mt-0.5">
-              Source: {fire.source === "usfs" ? "USFS" : "BLM"}
+              Source: {fireSource}
             </p>
           </div>
         </div>
       )}
 
-      {fire && !fire.hasActiveRestriction && (
+      {fireStatus === "none" && (
         <p className="flex items-center gap-1.5 text-sm text-sand-200/70">
           <span className="text-moss-400" aria-hidden>
             ✓
           </span>
-          No active fire restrictions in this area
+          {FIRE_STATUS_LABEL.none}
           <span className="text-xs text-sand-200/40 ml-1">
-            ({fire.source === "usfs" ? "USFS" : "BLM"})
+            ({fireSource})
           </span>
+        </p>
+      )}
+
+      {fireStatus === "unknown" && (
+        <p className="text-sm text-sand-200/50">
+          {FIRE_STATUS_LABEL.unknown}. Check with the local land manager before you go.
         </p>
       )}
 
@@ -133,45 +143,45 @@ export function LiveConditionsBadge({
   );
 }
 
-/** Compact inline badge for result cards. */
+/** Fire callout shown on every result card: level, none, or unknown (#13). */
+function FireCallout({ status }: { status: FireStatus }) {
+  if (status === "none") {
+    return (
+      <span className="flex items-center gap-1 text-moss-300">
+        ✓ {FIRE_STATUS_LABEL.none}
+      </span>
+    );
+  }
+  if (status === "unknown") {
+    return (
+      <span className="text-sand-200/50" title="Verify fire restrictions with the local land manager.">
+        {FIRE_STATUS_LABEL.unknown}
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1 font-medium text-amber-300">
+      🔥 {FIRE_STATUS_LABEL[status]}
+    </span>
+  );
+}
+
+/** Compact inline badge for result cards. Always shows a fire callout. */
 export function LiveConditionsCompact({
   conditions,
-  loading,
 }: {
   conditions: LiveConditions | null;
-  loading?: boolean;
 }) {
-  if (loading) {
-    return (
-      <span className="text-xs text-sand-200/30 animate-pulse">
-        Loading conditions…
-      </span>
-    );
-  }
-  if (!conditions) {
-    return (
-      <span className="text-xs text-sand-200/30">Conditions unavailable</span>
-    );
-  }
-
-  if (conditions.unavailableReason) {
-    return (
-      <span
-        className="text-xs text-sand-200/30"
-        title={UNAVAILABLE_REASON_TEXT[conditions.unavailableReason]}
-      >
-        {UNAVAILABLE_REASON_SHORT[conditions.unavailableReason]}
-      </span>
-    );
-  }
-
-  const { weather, fire } = conditions;
+  const fireStatus = fireStatusOf(conditions);
+  const reason = conditions?.unavailableReason;
+  const weather = conditions?.weather;
 
   return (
     <span className="flex flex-wrap items-center gap-3 text-xs text-sand-200/70">
-      {fire?.hasActiveRestriction && (
-        <span className="flex items-center gap-1 text-amber-300 font-medium">
-          🔥 {fire.restrictionLevel ?? "Fire restriction"}
+      <FireCallout status={fireStatus} />
+      {reason && (
+        <span className="text-sand-200/30" title={UNAVAILABLE_REASON_TEXT[reason]}>
+          {UNAVAILABLE_REASON_SHORT[reason]}
         </span>
       )}
       {weather && (

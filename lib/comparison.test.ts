@@ -164,6 +164,7 @@ function makeBreakdown(overrides: Partial<ScoreBreakdown> = {}): ScoreBreakdown 
     penalties: 0,
     riskPenalty: 0,
     hiddenGemBoost: 0,
+    firePenalty: 0,
     finalScore: score,
     ...overrides,
   };

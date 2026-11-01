@@ -1,3 +1,4 @@
+import { UPSTREAM_TIMEOUT_MS } from "./config";
 import type { WeatherCondition } from "./types";
 
 const BASE = "https://api.weather.gov";
@@ -9,16 +10,20 @@ function userAgent(): string {
   return `WanderMate/1.0 (${contact})`;
 }
 
+/** Points lookup + forecast share one time budget; a timeout returns null. */
 export async function fetchWeatherForCoords(
   lat: number,
-  lng: number
+  lng: number,
+  timeoutMs: number = UPSTREAM_TIMEOUT_MS
 ): Promise<WeatherCondition | null> {
+  const signal = AbortSignal.timeout(timeoutMs);
   try {
     const pointRes = await fetch(
       `${BASE}/points/${lat.toFixed(4)},${lng.toFixed(4)}`,
       {
         headers: { "User-Agent": userAgent(), Accept: "application/geo+json" },
         next: { revalidate: 3600 },
+        signal,
       }
     );
     if (!pointRes.ok) return null;
@@ -29,6 +34,7 @@ export async function fetchWeatherForCoords(
     const forecastRes = await fetch(forecastUrl, {
       headers: { "User-Agent": userAgent(), Accept: "application/geo+json" },
       next: { revalidate: 3600 },
+      signal,
     });
     if (!forecastRes.ok) return null;
     const forecast = await forecastRes.json();

@@ -9,16 +9,39 @@ import * as fx from "@/lib/conditions/__fixtures__/responses";
 
 // No test in this file may touch the network: every request goes through
 // this stub, and an unrouted URL fails the test.
-type Route = { match: (url: string) => boolean; status?: number; body?: unknown; throws?: boolean };
+type Route = {
+  match: (url: string) => boolean;
+  status?: number;
+  body?: unknown;
+  throws?: boolean;
+  /** Respond after this many ms, honoring the request's abort signal. */
+  delayMs?: number;
+};
+
+function respondAfter(ms: number, response: () => Response, signal?: AbortSignal | null) {
+  return new Promise<Response>((resolve, reject) => {
+    const timer = setTimeout(() => resolve(response()), ms);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    });
+  });
+}
 
 function stubFetch(routes: Route[]) {
-  return mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    const route = routes.find((r) => r.match(url));
-    if (!route) throw new Error(`Unrouted fetch in test: ${url}`);
-    if (route.throws) throw new TypeError("fetch failed");
-    return new Response(JSON.stringify(route.body ?? {}), { status: route.status ?? 200 });
-  });
+  return mock.method(
+    globalThis,
+    "fetch",
+    async (input: string | URL | Request, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const route = routes.find((r) => r.match(url));
+      if (!route) throw new Error(`Unrouted fetch in test: ${url}`);
+      if (route.throws) throw new TypeError("fetch failed");
+      const response = () =>
+        new Response(JSON.stringify(route.body ?? {}), { status: route.status ?? 200 });
+      return route.delayMs ? respondAfter(route.delayMs, response, init?.signal) : response();
+    }
+  );
 }
 
 const isPoints = (u: string) => u.includes("api.weather.gov/points/");
@@ -183,4 +206,39 @@ test("noCoordsConditions: fresh object and current timestamp per call", async ()
   const second = noCoordsConditions();
   assert.notEqual(first, second);
   assert.notEqual(first.fetchedAt, second.fetchedAt);
+});
+
+// --- timeouts ----------------------------------------------------------------
+
+const TEST_TIMEOUT_MS = 40;
+
+test("timeout: weather's two calls share one budget", async () => {
+  // Each call alone fits in the budget; together they exceed it.
+  stubFetch([
+    { match: isPoints, body: fx.weatherPoints, delayMs: 25 },
+    { match: isForecast, body: fx.weatherForecast, delayMs: 25 },
+  ]);
+  assert.equal(await fetchWeatherForCoords(LAT, LNG, TEST_TIMEOUT_MS), null);
+});
+
+test("timeout: weather within the shared budget succeeds", async () => {
+  stubFetch([
+    { match: isPoints, body: fx.weatherPoints, delayMs: 5 },
+    { match: isForecast, body: fx.weatherForecast, delayMs: 5 },
+  ]);
+  const result = await fetchWeatherForCoords(LAT, LNG, TEST_TIMEOUT_MS);
+  assert.equal(result?.shortForecast, "Mostly Sunny");
+});
+
+test("timeout: a hung USFS request becomes unknown (null)", async () => {
+  stubFetch([{ match: isUsfs, body: fx.usfsStage2, delayMs: 10_000 }]);
+  const started = Date.now();
+  assert.equal(await fetchFireRestrictions(LAT, LNG, TEST_TIMEOUT_MS), null);
+  assert.ok(Date.now() - started < 1_000, "should give up at the timeout, not wait for the response");
+});
+
+test("timeout: a hung RIDB request returns an empty list", async () => {
+  process.env.RIDB_API_KEY = "test-key";
+  stubFetch([{ match: isRidb, body: fx.ridbFacilities, delayMs: 10_000 }]);
+  assert.deepEqual(await fetchNearbyFacilities(LAT, LNG, 50, 5, TEST_TIMEOUT_MS), []);
 });

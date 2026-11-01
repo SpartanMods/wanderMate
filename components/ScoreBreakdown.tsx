@@ -72,6 +72,14 @@ export function ScoreBreakdown({ breakdown }: { breakdown: Breakdown }) {
             </span>
           </div>
         )}
+        {breakdown.firePenalty !== 0 && (
+          <div className="flex justify-between">
+            <span className="text-rust-300">Fire restrictions</span>
+            <span className="tabular-nums text-rust-300">
+              {breakdown.firePenalty}
+            </span>
+          </div>
+        )}
         {breakdown.riskPenalty !== 0 && (
           <div className="flex justify-between">
             <span className="text-rust-300">Risk guardrail</span>

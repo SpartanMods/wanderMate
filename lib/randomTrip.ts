@@ -1,37 +1,14 @@
 /*
  * "Surprise Me" engine. Weighted-random, not pure-random: it scores every
- * trip, drops hard mismatches and weak fits, then samples using a blend of
+ * trip (including live fire penalties), drops hard mismatches and weak fits, then samples using a blend of
  * match score, hidden-gem value, low popularity, and region novelty so the
  * pick is surprising but still relevant.
  */
 
 import { SCORE_WEIGHTS } from "./constants";
-import { getEffectiveDriveHours } from "./geo";
-import {
-  calculateTripScore,
-  explainMatch,
-  getQualityLabel,
-  hasHardConstraintViolation,
-} from "./scoring";
+import { buildRecommendation, getEligibleZones, type FireStatusByZone } from "./matching";
 import type { TripPreferences, TripRecommendation, TripZone } from "./types";
 import { mulberry32 } from "./utils";
-
-function buildRecommendation(
-  prefs: TripPreferences,
-  trip: TripZone
-): TripRecommendation {
-  const breakdown = calculateTripScore(prefs, trip);
-  const { whyItMatches, whyItMightNot } = explainMatch(prefs, trip, breakdown);
-  return {
-    trip,
-    score: breakdown.finalScore,
-    qualityLabel: getQualityLabel(breakdown.finalScore),
-    breakdown,
-    whyItMatches,
-    whyItMightNot,
-    effectiveDriveHours: getEffectiveDriveHours(prefs, trip),
-  };
-}
 
 /**
  * Selection weight blends:
@@ -82,16 +59,19 @@ function weightedPick(
 
 export function getRandomTripRecommendation(
   preferences: TripPreferences,
-  trips: TripZone[]
+  trips: TripZone[],
+  fireByZone: FireStatusByZone = {}
 ): {
   primary: TripRecommendation;
   backups: TripRecommendation[];
   explanation: string;
 } {
   // 1-2. Score everything, drop hard violations.
-  const eligible = trips
-    .filter((trip) => !hasHardConstraintViolation(preferences, trip))
-    .map((trip) => buildRecommendation(preferences, trip));
+  // Live fire penalties lower scores, so restricted zones fall out of the
+  // score-threshold pool below just as they drop in the results ranking.
+  const eligible = getEligibleZones(preferences, trips).map((trip) =>
+    buildRecommendation(preferences, trip, fireByZone[trip.id])
+  );
 
   // 3-4. Keep score >= 70, relax to >= 60 if too few remain.
   let pool = eligible.filter((r) => r.score >= 70);
@@ -112,7 +92,7 @@ export function getRandomTripRecommendation(
   if (pool.length === 0) {
     // Nothing eligible at all — fall back to best-scoring overall.
     pool = trips
-      .map((t) => buildRecommendation(preferences, t))
+      .map((t) => buildRecommendation(preferences, t, fireByZone[t.id]))
       .sort((a, b) => b.score - a.score)
       .slice(0, 3);
   }
