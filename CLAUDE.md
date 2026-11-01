@@ -23,7 +23,7 @@ schemas — use fixtures and say what is unverified.
 | 5 | URL hash preference state (replace localStorage) | ✅ Done |
 | 6 | Results page rebuilt (5–7 zones, user-select comparison) | ✅ Done |
 | 7 | Public zone detail pages `/zones/[id]` | ✅ Done |
-| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🟡 Shipped; fixes in progress — done: #12 #14 #15 #17 #18 #19 #30 · open: #11 #13 #16 #28 |
+| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🟡 Nearly done — done: #12 #13 #14 #15 #16 #17 #18 #19 #30 · open: #11 #28 (both blocked on API access, #20) |
 | 9 | Auth pages (login, magic link, Google OAuth, callback) | ⬜ Pending |
 | 10 | Save Trip + Field Report CRUD + dashboard | ⬜ Pending |
 | 11 | Profile baseline preferences pre-fill planner form | ⬜ Pending |
@@ -40,8 +40,58 @@ schemas — use fixtures and say what is unverified.
 - **Results list (#29):** no score cutoff — every zone passing the hard constraints is shown (up to 7), ranked; per-card quality labels flag weak matches. Closest-match fallback only when nothing passes the hard constraints.
 - **Preferences in URLs (#18):** `decodePrefs` validates with the Zod schema; activity keys limited to the known list.
 - **Supabase env (#30):** middleware passes through when Supabase env vars are missing; protected routes (Task 9+) must deny access themselves when Supabase is unavailable.
-- **Task 8 fix order:** ~~#14/#15/#17~~ → ~~#12~~ → #11 (blocked on #20) → ~~#18/#19~~ → #13/#16 → Task 9
+- **Fire penalty strength (#13):** confirmed by the owner as-is. Scores cluster tightly, so Stage 1 moves a #1 zone to ~#7, Stage 2 to ~#14 — intended. An active restriction with an unreadable level is the `restriction` status (penalized as Stage 1).
+- **Surprise Me (#33):** loads live conditions and applies the same fire penalties via the shared `buildRecommendation` in `lib/matching.ts`.
+- **Single eligibility rule:** `getEligibleZones()` in `lib/matching.ts` — use it anywhere zones are filtered by hard constraints.
 - **Test runner:** Node built-in `node:test` — run individual files: `node --import ./scripts/register-loader.mjs --test lib/<file>.test.ts`
+
+## Next Steps (handoff — start here)
+
+State as of PR #33 (merged): Task 8 is functionally complete; everything that
+could be done without external network access is done. `main` passes lint,
+typecheck, 109/109 tests, and build.
+
+1. **Unblock API access (owner action, required first)** — #20 and sub-issues #21–#26.
+   The Claude Code cloud environment blocks every external host. In the Claude
+   desktop app or claude.ai/code (not mobile): session title bar → cloud
+   environment menu → Edit → Network access (Limited) → add allowed domains
+   `icnsvugpozauxpicbuhq.supabase.co`, `api.weather.gov`, `apps.fs.usda.gov`,
+   `gis.blm.gov`, `ridb.recreation.gov` (keep "Allow package managers" ticked),
+   and add env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+   `RIDB_API_KEY`. Alternative: run Claude locally / via Remote Control in a
+   checkout that has `.env.local`. Never paste keys into chat or commit them.
+   Verify with `node scripts/verify-db.mjs` (reads the `zones` table; it reads
+   only `.env.local`, which is gitignored — in the cloud, either create it from
+   the env vars or query `$NEXT_PUBLIC_SUPABASE_URL/rest/v1/zones` with the anon
+   key) and close #25; close each host sub-issue once a request to it succeeds.
+2. **#11 — fix the BLM fire source.** `fetchBlmClosures` in
+   `lib/conditions/fireRestrictions.ts` queries a land-boundaries layer and is
+   disabled via `BLM_CHECK_ENABLED = false`. Find the real BLM fire-restriction
+   layer, verify its field list from `<layer>?f=json`, validate responses
+   (schema mismatch ⇒ unknown, never "no restriction"), re-enable the flag.
+   Also verify the USFS field names (`RESTRICTI1`, `UNITNAME`, `FORESTNAME`,
+   `STAGE`) and make `LiveConditions.hasError` meaningful (adapters currently
+   swallow errors, so it is never true).
+3. **#28 — record real API responses** as fixtures in
+   `lib/conditions/__fixtures__/` to replace the synthetic ones (header comment
+   marks them synthetic). Strip API keys. If a real response doesn't match an
+   adapter, file a bug rather than bending the fixture.
+4. **Task 9 — auth** (login, magic link, Google OAuth, callback) per the PRD
+   (#7). Note from #30: the middleware passes through when Supabase env vars
+   are missing, so protected routes must deny access themselves when Supabase
+   is unavailable. Use `requireSupabaseEnv()` / `getSupabaseEnv()` from
+   `lib/supabase/env.ts`.
+5. Then Task 10 (Save Trip + Field Reports, pro-gated) and Task 11 (profile
+   baseline preferences pre-fill the planner).
+
+**Workflow conventions used so far:** one branch + PR per ticket group
+(`claude/<topic>`), squash-merge, PR body lists Changes / Functionality /
+Validation, and every decision is recorded as a comment on the relevant issue
+(see #13 for the fire-ranking decision log). No CI exists — run the four
+checks locally before pushing. For browser checks, `npx next start` works
+without Supabase env vars; Chromium is at
+`/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`
+in the cloud container (use `playwright-core`).
 
 ## Supabase Schema (applied)
 - `profiles` — auto-created on signup, stores baseline_preferences + is_pro
