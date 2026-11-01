@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button, ButtonLink } from "@/components/Button";
 import { Field, OptionGroup } from "@/components/FormControls";
 import { SafetyNotice } from "@/components/SafetyNotice";
@@ -18,7 +18,10 @@ import {
   SKILL_LEVELS,
   VEHICLE_OPTIONS,
 } from "@/lib/constants";
+import { loadLiveConditions, type LiveDataResult } from "@/lib/conditions/client";
+import { fireStatusOf } from "@/lib/conditions/fireStatus";
 import { ORIGIN_PRESETS, resolveOrigin } from "@/lib/geo";
+import { getEligibleZones, type FireStatusByZone } from "@/lib/matching";
 import { getRandomTripRecommendation } from "@/lib/randomTrip";
 import type {
   ActivityKey,
@@ -65,21 +68,57 @@ function toPreferences(f: MiniForm): TripPreferences {
   };
 }
 
+type SurpriseResult = {
+  primary: TripRecommendation;
+  backups: TripRecommendation[];
+  explanation: string;
+  live: LiveDataResult;
+  /** Zone ids we requested live data for. */
+  lookedUp: Set<string>;
+};
+
 export default function SurprisePage() {
   const [form, setForm] = useState<MiniForm>(DEFAULTS);
-  const [result, setResult] = useState<{
-    primary: TripRecommendation;
-    backups: TripRecommendation[];
-    explanation: string;
-  } | null>(null);
+  const [result, setResult] = useState<SurpriseResult | null>(null);
+  const [loadingLive, setLoadingLive] = useState(false);
+  // Re-rolls with the same eligible zones reuse the live data already loaded.
+  const liveCache = useRef<{ key: string; live: LiveDataResult } | null>(null);
 
   function set<K extends keyof MiniForm>(key: K, value: MiniForm[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function roll(e?: React.FormEvent) {
+  async function roll(e?: React.FormEvent) {
     e?.preventDefault();
-    setResult(getRandomTripRecommendation(toPreferences(form), tripZones));
+    if (loadingLive) return;
+    const prefs = toPreferences(form);
+    const ids = getEligibleZones(prefs, tripZones).map((z) => z.id);
+    const key = ids.join(",");
+
+    let live = liveCache.current?.key === key ? liveCache.current.live : null;
+    if (!live) {
+      setLoadingLive(true);
+      live = await loadLiveConditions(ids);
+      setLoadingLive(false);
+      // Don't reuse a failed load; the next roll retries.
+      liveCache.current = live.failed ? null : { key, live };
+    }
+
+    const conditions = live.conditions;
+    const fireByZone: FireStatusByZone = Object.fromEntries(
+      ids.map((id) => [id, fireStatusOf(conditions[id])])
+    );
+    setResult({
+      ...getRandomTripRecommendation(prefs, tripZones, fireByZone),
+      live,
+      lookedUp: new Set(ids),
+    });
+  }
+
+  /** undefined for zones we never looked up (e.g. last-resort picks outside the eligible set). */
+  function conditionsFor(rec: TripRecommendation) {
+    if (!result || !result.lookedUp.has(rec.trip.id)) return undefined;
+    return result.live.conditions[rec.trip.id] ?? null;
   }
 
   return (
@@ -174,17 +213,27 @@ export default function SurprisePage() {
           </Field>
         </div>
 
-        <Button type="submit" size="lg" className="w-full sm:w-auto">
-          {result ? "🎲 Roll again" : "🎲 Surprise me"}
+        <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={loadingLive}>
+          {loadingLive ? "Loading live data…" : result ? "🎲 Roll again" : "🎲 Surprise me"}
         </Button>
       </form>
 
       {result && (
         <div className="space-y-5">
           <SafetyNotice />
+          {result.live.failed && (
+            <p
+              className="rounded-xl border border-amber-600/40 bg-amber-900/15 px-4 py-3 text-sm text-amber-100"
+              role="status"
+            >
+              Live conditions couldn&apos;t be loaded, so fire restrictions weren&apos;t
+              considered in this pick. Verify restrictions locally before you go.
+            </p>
+          )}
           <SurprisePrimaryCard
             rec={result.primary}
             explanation={result.explanation}
+            conditions={conditionsFor(result.primary)}
           />
 
           {result.backups.length > 0 && (
@@ -194,15 +243,15 @@ export default function SurprisePage() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 {result.backups.map((b) => (
-                  <SurpriseBackupCard key={b.trip.id} rec={b} />
+                  <SurpriseBackupCard key={b.trip.id} rec={b} conditions={conditionsFor(b)} />
                 ))}
               </div>
             </div>
           )}
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button onClick={() => roll()} variant="secondary">
-              🎲 Roll again
+            <Button onClick={() => roll()} variant="secondary" disabled={loadingLive}>
+              {loadingLive ? "Loading live data…" : "🎲 Roll again"}
             </Button>
             <ButtonLink href="/planner" variant="ghost">
               Plan a full trip instead

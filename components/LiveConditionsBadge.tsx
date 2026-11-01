@@ -33,6 +33,9 @@ export function LiveConditionsBadge({
 
   const { weather, fire, nearbyFacilities } = conditions;
   const hasAnyData = weather || fire || nearbyFacilities.length > 0;
+  // Same status mapping as result cards, so both views always agree.
+  const fireStatus = fireStatusOf(conditions);
+  const fireSource = fire ? (fire.source === "usfs" ? "USFS" : "BLM") : null;
 
   if (!hasAnyData) {
     return (
@@ -48,7 +51,7 @@ export function LiveConditionsBadge({
         Live Conditions
       </h2>
 
-      {fire?.hasActiveRestriction && (
+      {fire && fireStatus !== "none" && fireStatus !== "unknown" && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-600/40 bg-amber-900/20 px-3 py-2">
           <span className="mt-0.5 text-amber-400" aria-hidden>
             🔥
@@ -56,31 +59,31 @@ export function LiveConditionsBadge({
           <div>
             <p className="text-sm font-semibold text-amber-200">
               Fire restriction active
-              {fire.restrictionLevel ? ` — ${fire.restrictionLevel}` : ""}
+              {fireStatus === "restriction" ? "" : ` — ${FIRE_STATUS_LABEL[fireStatus]}`}
             </p>
             {fire.affectedArea && (
               <p className="text-xs text-amber-200/70">{fire.affectedArea}</p>
             )}
             <p className="text-xs text-amber-200/50 mt-0.5">
-              Source: {fire.source === "usfs" ? "USFS" : "BLM"}
+              Source: {fireSource}
             </p>
           </div>
         </div>
       )}
 
-      {fire && !fire.hasActiveRestriction && (
+      {fireStatus === "none" && (
         <p className="flex items-center gap-1.5 text-sm text-sand-200/70">
           <span className="text-moss-400" aria-hidden>
             ✓
           </span>
           {FIRE_STATUS_LABEL.none}
           <span className="text-xs text-sand-200/40 ml-1">
-            ({fire.source === "usfs" ? "USFS" : "BLM"})
+            ({fireSource})
           </span>
         </p>
       )}
 
-      {!fire && (
+      {fireStatus === "unknown" && (
         <p className="text-sm text-sand-200/50">
           {FIRE_STATUS_LABEL.unknown}. Check with the local land manager before you go.
         </p>

@@ -148,6 +148,7 @@ test("fire penalty: magnitudes per level, none/unknown cost nothing", () => {
   assert.equal(firePenaltyFor("none"), 0);
   assert.equal(firePenaltyFor("unknown"), 0);
   assert.equal(firePenaltyFor("Stage 1"), -5);
+  assert.equal(firePenaltyFor("restriction"), -5, "unreadable active level = Stage 1");
   assert.equal(firePenaltyFor("Stage 2 (partial)"), -7.5);
   assert.equal(firePenaltyFor("Stage 2"), -12);
   assert.equal(firePenaltyFor("Stage 3"), -30);

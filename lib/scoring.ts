@@ -12,6 +12,7 @@ import {
   ACTIVITY_WEIGHT_MULTIPLIER,
   CAMPING_LABELS,
   FIRE_PENALTY,
+  UNSPECIFIED_RESTRICTION_PENALTY_LEVEL,
   RISK_LABELS,
   MISSING_MUST_HAVE_PENALTY,
   SCORE_WEIGHTS,
@@ -521,6 +522,7 @@ export function getStrongMustHaves(
 /** Score deduction for a zone's live fire status: 0 for none / unknown. */
 export function firePenaltyFor(status: FireStatus): number {
   if (status === "none" || status === "unknown") return 0;
+  if (status === "restriction") return -FIRE_PENALTY[UNSPECIFIED_RESTRICTION_PENALTY_LEVEL];
   return -FIRE_PENALTY[status];
 }
 

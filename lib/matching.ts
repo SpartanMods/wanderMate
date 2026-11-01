@@ -22,13 +22,20 @@ function fireExplanation(status: FireStatus, firePenalty: number): string | null
   return `Fire restrictions nearby: ${FIRE_STATUS_LABEL[status]} — ranked lower (${firePenalty} pts).`;
 }
 
-function buildRecommendation(
+/** Zones that pass the hard constraints. The single source of eligibility. */
+export function getEligibleZones(prefs: TripPreferences, trips: TripZone[]): TripZone[] {
+  return trips.filter((trip) => !hasHardConstraintViolation(prefs, trip));
+}
+
+/** Shared by the results page and Surprise Me so both apply fire penalties and notes. */
+export function buildRecommendation(
   prefs: TripPreferences,
   trip: TripZone,
   fireStatus: FireStatus = "unknown"
 ): TripRecommendation {
   const breakdown = calculateTripScore(prefs, trip, fireStatus);
   const { whyItMatches, whyItMightNot: baseConcerns } = explainMatch(prefs, trip, breakdown);
+  // When present, the fire note is always whyItMightNot[0] (cards rely on this).
   const fireNote = fireExplanation(fireStatus, breakdown.firePenalty);
   const whyItMightNot = fireNote ? [fireNote, ...baseConcerns] : baseConcerns;
   return {
@@ -72,12 +79,18 @@ export function getRecommendations(
   trips: TripZone[],
   fireByZone: FireStatusByZone = {}
 ): TripRecommendation[] {
-  const scored = trips
-    .filter((trip) => !hasHardConstraintViolation(preferences, trip))
+  return diversifyRecommendations(scoreEligible(preferences, trips, fireByZone));
+}
+
+/** Eligible zones scored (with fire penalties) and sorted by score, not yet diversified. */
+export function scoreEligible(
+  preferences: TripPreferences,
+  trips: TripZone[],
+  fireByZone: FireStatusByZone = {}
+): TripRecommendation[] {
+  return getEligibleZones(preferences, trips)
     .map((trip) => buildRecommendation(preferences, trip, fireByZone[trip.id]))
     .sort((a, b) => b.score - a.score);
-
-  return diversifyRecommendations(scored);
 }
 
 /**

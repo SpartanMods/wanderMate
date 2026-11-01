@@ -46,6 +46,6 @@ test("fireStatusOf: active restriction returns its level", () => {
   assert.equal(fireStatusOf(conditionsWith(level)), "Stage 2 (partial)");
 });
 
-test("fireStatusOf: active restriction without a level is unknown", () => {
-  assert.equal(fireStatusOf(conditionsWith(fire({ hasActiveRestriction: true }))), "unknown");
+test("fireStatusOf: active restriction without a level fails safe as a restriction", () => {
+  assert.equal(fireStatusOf(conditionsWith(fire({ hasActiveRestriction: true }))), "restriction");
 });

@@ -237,6 +237,9 @@ export const FIRE_PENALTY: Record<FireLevel, number> = {
   Closure: 30,
 };
 
+// An active restriction whose level couldn't be read is penalized as this level.
+export const UNSPECIFIED_RESTRICTION_PENALTY_LEVEL: FireLevel = "Stage 1";
+
 // Short, lower-case labels for risk tolerance, used in explanations.
 export const RISK_LABELS: Record<1 | 2 | 3 | 4, string> = {
   1: "low-risk",

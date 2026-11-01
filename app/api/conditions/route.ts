@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import tripZones from "@/data/tripZones";
-import { fetchConditionsForZones, parseZoneIds } from "@/lib/conditions/batch";
+import { fetchConditionsForZones, isDegraded, parseZoneIds } from "@/lib/conditions/batch";
 
-/** Upstream data is cached for an hour; let the CDN reuse batch responses too. */
-const CACHE_CONTROL = "public, s-maxage=3600, stale-while-revalidate=600";
+/** Complete responses match the 1h upstream cache. */
+const CACHE_CONTROL_COMPLETE = "public, s-maxage=3600, stale-while-revalidate=600";
+/** Responses with failed/timed-out lookups are cached only briefly so outages clear fast. */
+const CACHE_CONTROL_DEGRADED = "public, s-maxage=60";
 
 /** GET /api/conditions?ids=a,b,c → { conditions: { [zoneId]: LiveConditions } } */
 export async function GET(request: Request) {
@@ -13,5 +15,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "No valid zone ids" }, { status: 400 });
   }
   const conditions = await fetchConditionsForZones(zones);
-  return NextResponse.json({ conditions }, { headers: { "Cache-Control": CACHE_CONTROL } });
+  const cacheControl = isDegraded(zones, conditions)
+    ? CACHE_CONTROL_DEGRADED
+    : CACHE_CONTROL_COMPLETE;
+  return NextResponse.json({ conditions }, { headers: { "Cache-Control": cacheControl } });
 }

@@ -74,3 +74,24 @@ test("filter: hiding unknown keeps only zones with known fire status", () => {
   assert.deepEqual(ranked.visible.map((r) => r.trip.id), [top.trip.id]);
   assert.equal(ranked.hiddenCount, ranked.rankedCount - 1);
 });
+
+test("filter: a hidden zone doesn't affect region diversification of the rest", () => {
+  // Hiding a zone must give the same visible order as if it didn't exist.
+  const regionCounts = new Map<string, number>();
+  for (const r of baseline.visible) regionCounts.set(r.trip.region, (regionCounts.get(r.trip.region) ?? 0) + 1);
+  const target =
+    baseline.visible.find((r) => (regionCounts.get(r.trip.region) ?? 0) > 1) ?? top;
+  const conditions: ConditionsByZone = { [target.trip.id]: restricted("Closure") };
+  const hidden = rankWithLiveConditions(prefs, tripZones, conditions, parseFireFilter("closure"), LIMIT);
+  const without = rankWithLiveConditions(
+    prefs,
+    tripZones.filter((z) => z.id !== target.trip.id),
+    {},
+    new Set(),
+    LIMIT
+  );
+  assert.deepEqual(
+    hidden.visible.map((r) => r.trip.id),
+    without.visible.map((r) => r.trip.id)
+  );
+});

@@ -11,8 +11,7 @@ import { TopTripComparison } from "@/components/TopTripComparison";
 import tripZones from "@/data/tripZones";
 import { buildTopTripComparison } from "@/lib/comparison";
 import { isKnownOrigin, resolveOrigin } from "@/lib/geo";
-import { UPSTREAM_TIMEOUT_MS } from "@/lib/conditions/config";
-import type { ConditionsByZone } from "@/lib/conditions/types";
+import { loadLiveConditions, type LiveDataResult } from "@/lib/conditions/client";
 import {
   FIRE_FILTER_PARAM,
   parseFireFilter,
@@ -20,34 +19,16 @@ import {
   type FireFilterValue,
 } from "@/lib/fireFilter";
 import { rankWithLiveConditions } from "@/lib/liveRanking";
-import { diagnoseRestrictiveness, getClosestMatches } from "@/lib/matching";
-import { hasHardConstraintViolation } from "@/lib/scoring";
+import {
+  diagnoseRestrictiveness,
+  getClosestMatches,
+  getEligibleZones,
+} from "@/lib/matching";
 import { loadPreferences } from "@/lib/storage";
 import type { TripPreferences } from "@/lib/types";
 
 const MAX_RESULTS = 7;
-/** Server-side upstream calls are capped at UPSTREAM_TIMEOUT_MS; allow a margin for the batch route itself. */
-const LIVE_DATA_CLIENT_TIMEOUT_MS = UPSTREAM_TIMEOUT_MS + 5_000;
-
-type LiveDataState =
-  | { status: "loading" }
-  | { status: "ready"; conditions: ConditionsByZone };
-
-/** Fetch failure, timeout, or a malformed body all mean "no live data" (every zone unknown). */
-async function fetchBatchConditions(ids: string[], signal: AbortSignal): Promise<ConditionsByZone> {
-  try {
-    const res = await fetch(`/api/conditions?ids=${encodeURIComponent(ids.join(","))}`, { signal });
-    if (!res.ok) return {};
-    const body: unknown = await res.json();
-    if (typeof body !== "object" || body === null || !("conditions" in body)) return {};
-    const { conditions } = body as { conditions: unknown };
-    return typeof conditions === "object" && conditions !== null
-      ? (conditions as ConditionsByZone)
-      : {};
-  } catch {
-    return {};
-  }
-}
+type LiveDataState = { status: "loading" } | ({ status: "ready" } & LiveDataResult);
 
 export default function ResultsPage() {
   const [prefs, setPrefs] = useState<TripPreferences | null | undefined>(
@@ -59,14 +40,18 @@ export default function ResultsPage() {
   const [live, setLive] = useState<LiveDataState>({ status: "loading" });
   const [hiddenFire, setHiddenFire] = useState<Set<FireFilterValue>>(new Set());
 
-  function toggleCompare(zoneId: string) {
+  /**
+   * `shownIds` = zones currently on screen. Selections the fire filter has
+   * hidden are dropped so they don't count toward the 3-zone limit.
+   */
+  function toggleCompare(zoneId: string, shownIds: Set<string>) {
     setSelectedForCompare((prev) => {
-      const next = new Set(prev);
+      const next = new Set(Array.from(prev).filter((id) => shownIds.has(id)));
       if (next.has(zoneId)) {
         next.delete(zoneId);
         return next;
       }
-      if (next.size >= 3) return prev;
+      if (next.size >= 3) return next;
       next.add(zoneId);
       return next;
     });
@@ -89,10 +74,7 @@ export default function ResultsPage() {
 
   // Zones that pass the hard constraints; only these need live data.
   const eligibleIds = useMemo(
-    () =>
-      prefs
-        ? tripZones.filter((z) => !hasHardConstraintViolation(prefs, z)).map((z) => z.id)
-        : [],
+    () => (prefs ? getEligibleZones(prefs, tripZones).map((z) => z.id) : []),
     [prefs]
   );
 
@@ -100,21 +82,14 @@ export default function ResultsPage() {
   // fetched independently server-side; we wait for all to settle, then rank once.
   useEffect(() => {
     if (!prefs) return;
-    if (eligibleIds.length === 0) {
-      setLive({ status: "ready", conditions: {} });
-      return;
-    }
     setLive({ status: "loading" });
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), LIVE_DATA_CLIENT_TIMEOUT_MS);
     let cancelled = false;
-    fetchBatchConditions(eligibleIds, controller.signal).then((conditions) => {
-      clearTimeout(timer);
-      if (!cancelled) setLive({ status: "ready", conditions });
+    loadLiveConditions(eligibleIds, controller.signal).then((result) => {
+      if (!cancelled) setLive({ status: "ready", ...result });
     });
     return () => {
       cancelled = true;
-      clearTimeout(timer);
       controller.abort();
     };
   }, [prefs, eligibleIds]);
@@ -155,6 +130,7 @@ export default function ResultsPage() {
   // Every zone that passes the hard limits is ranked; the fire filter may hide
   // some. The closest-match fallback only applies when no zone passes at all.
   const liveConditions = live.status === "ready" ? live.conditions : null;
+  const liveFailed = live.status === "ready" && live.failed;
   const hasMatches = ranking ? ranking.rankedCount > 0 : true;
   const list = !ranking
     ? []
@@ -163,6 +139,7 @@ export default function ResultsPage() {
       : getClosestMatches(prefs, tripZones, 3);
   const top = list[0];
   const rest = list.slice(1);
+  const shownIds = new Set(list.map((r) => r.trip.id));
   const selectedRecs = list.filter((r) => selectedForCompare.has(r.trip.id));
   const comparison =
     selectedRecs.length >= 2
@@ -216,6 +193,17 @@ export default function ResultsPage() {
         </div>
       )}
 
+      {ranking && hasMatches && liveFailed && (
+        <p
+          className="rounded-xl border border-amber-600/40 bg-amber-900/15 px-4 py-3 text-sm text-amber-100"
+          role="status"
+        >
+          Live conditions couldn&apos;t be loaded right now, so every zone&apos;s fire
+          status is unknown and fire restrictions aren&apos;t reflected in the ranking.
+          Verify restrictions locally before you go.
+        </p>
+      )}
+
       {ranking && hasMatches && (
         <FireFilter hidden={hiddenFire} onChange={updateFireFilter} />
       )}
@@ -228,7 +216,9 @@ export default function ResultsPage() {
 
       {ranking && hasMatches && list.length === 0 && (
         <div className="rounded-xl border border-amber-600/40 bg-amber-900/15 p-5 text-sm text-amber-100">
-          All {ranking.rankedCount} matching zones are hidden by your fire filter.{" "}
+          {liveFailed
+            ? `Live data didn't load, so all ${ranking.rankedCount} matching zones have unknown fire status and your filter hides them.`
+            : `All ${ranking.rankedCount} matching zones are hidden by your fire filter.`}{" "}
           <button
             type="button"
             onClick={() => updateFireFilter(new Set())}
@@ -294,9 +284,9 @@ export default function ResultsPage() {
             featured
             originLabel={originLabel}
             isSelectedForCompare={selectedForCompare.has(top.trip.id)}
-            onToggleCompare={() => toggleCompare(top.trip.id)}
-            compareCount={selectedForCompare.size}
-            conditions={liveConditions ? liveConditions[top.trip.id] ?? null : undefined}
+            onToggleCompare={() => toggleCompare(top.trip.id, shownIds)}
+            compareCount={selectedRecs.length}
+            conditions={hasMatches && liveConditions ? liveConditions[top.trip.id] ?? null : undefined}
           />
         </div>
       )}
@@ -312,16 +302,16 @@ export default function ResultsPage() {
               rank={i + 2}
               originLabel={originLabel}
               isSelectedForCompare={selectedForCompare.has(rec.trip.id)}
-              onToggleCompare={() => toggleCompare(rec.trip.id)}
-              compareCount={selectedForCompare.size}
-              conditions={liveConditions ? liveConditions[rec.trip.id] ?? null : undefined}
+              onToggleCompare={() => toggleCompare(rec.trip.id, shownIds)}
+              compareCount={selectedRecs.length}
+              conditions={hasMatches && liveConditions ? liveConditions[rec.trip.id] ?? null : undefined}
             />
           ))}
         </div>
       )}
 
       {/* Compare panel */}
-      {selectedForCompare.size < 2 ? (
+      {selectedRecs.length < 2 ? (
         <div className="rounded-xl border border-basecamp-700/50 bg-basecamp-900/30 p-4 text-sm text-sand-200/60">
           Select 2–3 trips above to compare them side by side.
         </div>

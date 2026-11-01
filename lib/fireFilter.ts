@@ -18,7 +18,11 @@ export const FIRE_FILTER_OPTIONS: {
   { value: "closure", label: "Hide closures / Stage 3", statuses: ["Closure", "Stage 3"] },
   { value: "stage2", label: "Hide Stage 2", statuses: ["Stage 2"] },
   { value: "stage2-partial", label: "Hide Stage 2 (partial)", statuses: ["Stage 2 (partial)"] },
-  { value: "stage1", label: "Hide Stage 1", statuses: ["Stage 1"] },
+  {
+    value: "stage1",
+    label: "Hide Stage 1 / unspecified",
+    statuses: ["Stage 1", "restriction"],
+  },
   { value: "unknown", label: "Hide unknown fire status", statuses: ["unknown"] },
 ];
 

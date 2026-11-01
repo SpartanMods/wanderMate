@@ -2,8 +2,11 @@
 // the results page and cards can import them without bundling the adapters.
 import type { FireLevel, LiveConditions } from "./types";
 
-/** One fire state per zone: a restriction level, confirmed none, or unknown. */
-export type FireStatus = FireLevel | "none" | "unknown";
+/**
+ * One fire state per zone: a restriction level, an active restriction whose
+ * level couldn't be read ("restriction"), confirmed none, or unknown.
+ */
+export type FireStatus = FireLevel | "restriction" | "none" | "unknown";
 
 /**
  * Unknown covers: no conditions fetched, no coordinates, a failed or timed
@@ -14,7 +17,8 @@ export function fireStatusOf(conditions: LiveConditions | null | undefined): Fir
   const { fire } = conditions;
   if (!fire) return "unknown";
   if (!fire.hasActiveRestriction) return "none";
-  return fire.restrictionLevel ?? "unknown";
+  // Known-active but unreadable level: fail safe as a restriction, never "unknown".
+  return fire.restrictionLevel ?? "restriction";
 }
 
 export const FIRE_STATUS_LABEL: Record<FireStatus, string> = {
@@ -23,6 +27,7 @@ export const FIRE_STATUS_LABEL: Record<FireStatus, string> = {
   "Stage 2": "Stage 2",
   "Stage 2 (partial)": "Stage 2 (partial)",
   "Stage 1": "Stage 1",
+  restriction: "Fire restriction",
   none: "No fire restrictions reported",
   unknown: "Fire status unavailable",
 };
