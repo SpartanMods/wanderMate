@@ -18,8 +18,9 @@ const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "../lib/conditions
 const CASES = {
   "blm-rma-stage1-newcastle-wy": { source: "blm-rma", lat: 43.85, lng: -104.2 },
   "blm-rma-year-round-rabbit-valley": { source: "blm-rma", lat: 39.1725, lng: -109.0221 },
-  "utah-ffsl-stage1-west-desert": { source: "utah-ffsl", lat: 39.35, lng: -112.58 },
   "utah-ffsl-capitol-reef": { source: "utah-ffsl", lat: 38.067, lng: -111.1553 },
+  // BLM West Desert Stage 1 plus Davis County "Recurring" (Apr 1 – Oct 31) orders.
+  "utah-ffsl-stage1-recurring-farmington": { source: "utah-ffsl", lat: 40.98, lng: -111.89 },
   "usfs-psicc-buena-vista": { source: "usfs-psicc", lat: 38.8422, lng: -106.1311 },
 };
 

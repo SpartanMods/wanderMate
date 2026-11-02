@@ -1,10 +1,10 @@
 {
   "_recorded": {
-    "at": "2026-11-02T02:41:23.746Z",
+    "at": "2026-11-02T03:45:22.932Z",
     "source": "blm-rma",
     "lat": 39.1725,
     "lng": -109.0221,
-    "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/Rocky_Mountain_Area_BLM_Fire_Restriction_Polygons_NEW_VIEW/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryPoint&geometry=%7B%22x%22%3A-109.0221%2C%22y%22%3A39.1725%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=80&units=esriSRUnit_StatuteMile&outFields=restriction_status%2Cadmin_unit_nm%2Ccounty_name%2Cstate&returnGeometry=false&resultRecordCount=200"
+    "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/Rocky_Mountain_Area_BLM_Fire_Restriction_Polygons_NEW_VIEW/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryPoint&geometry=%7B%22x%22%3A-109.0221%2C%22y%22%3A39.1725%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=10&units=esriSRUnit_StatuteMile&outFields=restriction_status%2Cadmin_unit_nm%2Ccounty_name%2Cstate&returnGeometry=false&resultRecordCount=200"
   },
   "response": {
     "objectIdFieldName": "OBJECTID",
@@ -80,136 +80,8 @@
       {
         "attributes": {
           "restriction_status": "Year Round",
-          "admin_unit_nm": "Uncompahgre Field Office",
-          "county_name": "Delta County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Uncompahgre Field Office",
-          "county_name": "Ouray County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Uncompahgre Field Office",
-          "county_name": "San Miguel County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Tres Rios Field Office",
-          "county_name": "Montrose County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Tres Rios Field Office",
-          "county_name": "San Miguel County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
           "admin_unit_nm": "Grand Junction Field Office",
           "county_name": "Mesa County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Grand Junction Field Office",
-          "county_name": "Montrose County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "White River Field Office",
-          "county_name": "Garfield County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "White River Field Office",
-          "county_name": "Moffat County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "White River Field Office",
-          "county_name": "Rio Blanco County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Colorado River Valley Field Office",
-          "county_name": "Mesa County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Grand Junction Field Office",
-          "county_name": "Delta County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Uncompahgre Field Office",
-          "county_name": "Mesa County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Colorado River Valley Field Office",
-          "county_name": "Rio Blanco County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Colorado River Valley Field Office",
-          "county_name": "Garfield County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Grand Junction Field Office",
-          "county_name": "Garfield County",
-          "state": "Colorado"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Uncompahgre Field Office",
-          "county_name": "Montrose County",
           "state": "Colorado"
         }
       }

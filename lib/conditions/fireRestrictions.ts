@@ -4,30 +4,61 @@ import {
   FIRE_SOURCES,
   buildQueryUrl,
   interpretResponse,
+  unknownAnswer,
   worseLevel,
   type FireSource,
   type SourceAnswer,
 } from "./fireSources";
 import type { FireRestriction, FireSourceId } from "./types";
 
-/** Queries one source; a non-OK status, network error or timeout is unknown. */
+/** Same 1h data-cache window as the other upstream adapters. */
+const FIRE_FETCH_REVALIDATE_SECONDS = 3600;
+
+/**
+ * ArcGIS reports errors as HTTP 200, so Next's data cache stores an error body
+ * like any other response. A failed answer is retried once under a cache key
+ * that changes every RETRY_CACHE_BUCKET_MS, so a cached error clears within
+ * that window instead of lasting the full revalidate period.
+ */
+const RETRY_CACHE_BUCKET_MS = 5 * 60 * 1000;
+
+function retryCacheKey(now: number = Date.now()): string {
+  return `retry-${Math.floor(now / RETRY_CACHE_BUCKET_MS)}`;
+}
+
+async function fetchAnswer(
+  source: FireSource<unknown>,
+  url: string,
+  signal: AbortSignal
+): Promise<SourceAnswer> {
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: FIRE_FETCH_REVALIDATE_SECONDS },
+      signal,
+    });
+    if (!res.ok) return unknownAnswer("failed");
+    return interpretResponse(source, await res.json());
+  } catch {
+    return unknownAnswer("failed");
+  }
+}
+
+/**
+ * Queries one source, retrying a failed lookup once (see RETRY_CACHE_BUCKET_MS).
+ * Both attempts share one timeout, so a source never takes longer than
+ * `timeoutMs`. A failure after the retry, or the timeout, is unknown.
+ */
 async function querySource(
   source: FireSource<unknown>,
   lat: number,
   lng: number,
   timeoutMs: number
 ): Promise<SourceAnswer> {
-  try {
-    const res = await fetch(buildQueryUrl(source, lat, lng), {
-      headers: { Accept: "application/json" },
-      next: { revalidate: 3600 },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    if (!res.ok) return { kind: "unknown" };
-    return interpretResponse(source, await res.json());
-  } catch {
-    return { kind: "unknown" };
-  }
+  const signal = AbortSignal.timeout(timeoutMs);
+  const first = await fetchAnswer(source, buildQueryUrl(source, lat, lng), signal);
+  if (first.kind !== "unknown" || first.reason !== "failed" || signal.aborted) return first;
+  return fetchAnswer(source, buildQueryUrl(source, lat, lng, retryCacheKey()), signal);
 }
 
 /**
@@ -69,20 +100,30 @@ export function combineAnswers(
   };
 }
 
+export type FireLookup = {
+  /** Null = unknown (see combineAnswers). */
+  fire: FireRestriction | null;
+  /**
+   * True when a source lookup failed (network, HTTP, ArcGIS error, schema
+   * mismatch, truncation). False when an unknown result is a stable coverage
+   * gap, so callers can cache it normally.
+   */
+  failed: boolean;
+};
+
 /**
- * Returns the most severe active fire restriction within the search radius of
- * a zone, from the sources that cover it (see fireCoverage.ts). Returns null
- * (unknown) when nothing is in force but coverage is incomplete or any source
- * failed. Sources are queried concurrently, each with its own timeout.
+ * Looks up fire restrictions within the search radius of a zone, from the
+ * sources that cover it (see fireCoverage.ts). Sources are queried
+ * concurrently, each within `timeoutMs`.
  */
 export async function fetchFireRestrictions(
   zoneId: string,
   lat: number,
   lng: number,
   timeoutMs: number = UPSTREAM_TIMEOUT_MS
-): Promise<FireRestriction | null> {
+): Promise<FireLookup> {
   const coverage = fireCoverageFor(zoneId);
-  if (coverage.sources.length === 0) return null;
+  if (coverage.sources.length === 0) return { fire: null, failed: false };
 
   const answers = await Promise.all(
     coverage.sources.map(async (id) => ({
@@ -90,5 +131,8 @@ export async function fetchFireRestrictions(
       answer: await querySource(FIRE_SOURCES[id], lat, lng, timeoutMs),
     }))
   );
-  return combineAnswers(answers, coverage, new Date().toISOString());
+  return {
+    fire: combineAnswers(answers, coverage, new Date().toISOString()),
+    failed: answers.some(({ answer }) => answer.kind === "unknown" && answer.reason === "failed"),
+  };
 }

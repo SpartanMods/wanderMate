@@ -41,13 +41,14 @@ export async function fetchLiveConditions(zone: TripZone): Promise<LiveCondition
 
   return {
     weather: weather.status === "fulfilled" ? weather.value : null,
-    fire: fire.status === "fulfilled" ? fire.value : null,
+    fire: fire.status === "fulfilled" ? fire.value.fire : null,
     nearbyFacilities:
       nearbyFacilities.status === "fulfilled" ? nearbyFacilities.value : [],
     fetchedAt,
     hasError:
       weather.status === "rejected" ||
       fire.status === "rejected" ||
+      (fire.status === "fulfilled" && fire.value.failed) ||
       nearbyFacilities.status === "rejected",
     unavailableReason: null,
   };

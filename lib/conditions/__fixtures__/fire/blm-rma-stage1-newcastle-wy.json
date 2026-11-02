@@ -1,10 +1,10 @@
 {
   "_recorded": {
-    "at": "2026-11-02T02:41:23.304Z",
+    "at": "2026-11-02T03:45:22.603Z",
     "source": "blm-rma",
     "lat": 43.85,
     "lng": -104.2,
-    "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/Rocky_Mountain_Area_BLM_Fire_Restriction_Polygons_NEW_VIEW/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryPoint&geometry=%7B%22x%22%3A-104.2%2C%22y%22%3A43.85%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=80&units=esriSRUnit_StatuteMile&outFields=restriction_status%2Cadmin_unit_nm%2Ccounty_name%2Cstate&returnGeometry=false&resultRecordCount=200"
+    "url": "https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/Rocky_Mountain_Area_BLM_Fire_Restriction_Polygons_NEW_VIEW/FeatureServer/0/query?f=json&where=1%3D1&geometryType=esriGeometryPoint&geometry=%7B%22x%22%3A-104.2%2C%22y%22%3A43.85%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=10&units=esriSRUnit_StatuteMile&outFields=restriction_status%2Cadmin_unit_nm%2Ccounty_name%2Cstate&returnGeometry=false&resultRecordCount=200"
   },
   "response": {
     "objectIdFieldName": "OBJECTID",
@@ -79,106 +79,10 @@
     "features": [
       {
         "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Newcastle Field Office",
-          "county_name": "Dawes County",
-          "state": "Nebraska"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Stage 1",
-          "admin_unit_nm": "Newcastle Field Office",
-          "county_name": "Crook County",
-          "state": "Wyoming"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Stage 1",
-          "admin_unit_nm": "Newcastle Field Office",
-          "county_name": "Niobrara County",
-          "state": "Wyoming"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "South Dakota Field Office",
-          "county_name": "Custer County",
-          "state": "South Dakota"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "South Dakota Field Office",
-          "county_name": "Fall River County",
-          "state": "South Dakota"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "South Dakota Field Office",
-          "county_name": "Lawrence County",
-          "state": "South Dakota"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "South Dakota Field Office",
-          "county_name": "Meade County",
-          "state": "South Dakota"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "South Dakota Field Office",
-          "county_name": "Pennington County",
-          "state": "South Dakota"
-        }
-      },
-      {
-        "attributes": {
           "restriction_status": "Stage 1",
           "admin_unit_nm": "Newcastle Field Office",
           "county_name": "Weston County",
           "state": "Wyoming"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Buffalo Field Office",
-          "county_name": "Campbell County",
-          "state": "Wyoming"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Casper Field Office",
-          "county_name": "Converse County",
-          "state": "Wyoming"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "Newcastle Field Office",
-          "county_name": "Sioux County",
-          "state": "Nebraska"
-        }
-      },
-      {
-        "attributes": {
-          "restriction_status": "Year Round",
-          "admin_unit_nm": "South Dakota Field Office",
-          "county_name": "Butte County",
-          "state": "South Dakota"
         }
       }
     ]

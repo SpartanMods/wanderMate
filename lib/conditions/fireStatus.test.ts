@@ -15,14 +15,13 @@ function conditionsWith(fire: FireRestriction | null): LiveConditions {
   };
 }
 
-const fire = (overrides: Partial<FireRestriction>): FireRestriction => ({
+const NO_RESTRICTION: FireRestriction = {
   hasActiveRestriction: false,
   restrictionLevel: null,
   affectedArea: null,
   sources: ["usfs-psicc"],
   fetchedAt: "2026-07-01T00:00:00.000Z",
-  ...overrides,
-});
+};
 
 test("fireStatusOf: missing conditions are unknown", () => {
   assert.equal(fireStatusOf(null), "unknown");
@@ -38,14 +37,14 @@ test("fireStatusOf: fire source unavailable is unknown, not none", () => {
 });
 
 test("fireStatusOf: no active restriction is none", () => {
-  assert.equal(fireStatusOf(conditionsWith(fire({}))), "none");
+  assert.equal(fireStatusOf(conditionsWith(NO_RESTRICTION)), "none");
 });
 
 test("fireStatusOf: active restriction returns its level", () => {
-  const level = fire({ hasActiveRestriction: true, restrictionLevel: "Stage 2 (partial)" });
-  assert.equal(fireStatusOf(conditionsWith(level)), "Stage 2 (partial)");
-});
-
-test("fireStatusOf: active restriction without a level fails safe as a restriction", () => {
-  assert.equal(fireStatusOf(conditionsWith(fire({ hasActiveRestriction: true }))), "restriction");
+  const level: FireRestriction = {
+    ...NO_RESTRICTION,
+    hasActiveRestriction: true,
+    restrictionLevel: "Stage 2",
+  };
+  assert.equal(fireStatusOf(conditionsWith(level)), "Stage 2");
 });

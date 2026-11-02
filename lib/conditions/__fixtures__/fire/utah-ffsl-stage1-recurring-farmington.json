@@ -1,10 +1,10 @@
 {
   "_recorded": {
-    "at": "2026-11-02T02:41:24.948Z",
+    "at": "2026-11-02T03:45:24.320Z",
     "source": "utah-ffsl",
-    "lat": 39.35,
-    "lng": -112.58,
-    "url": "https://services.arcgis.com/ZzrwjTRez6FJiOq4/arcgis/rest/services/Fire_Restrictions/FeatureServer/0/query?f=json&where=Status+%3D+%27Active%27&geometryType=esriGeometryPoint&geometry=%7B%22x%22%3A-112.58%2C%22y%22%3A39.35%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=80&units=esriSRUnit_StatuteMile&outFields=RestrictionType%2CStatus%2CAgency%2CShort_AreaDescription&returnGeometry=false&resultRecordCount=200"
+    "lat": 40.98,
+    "lng": -111.89,
+    "url": "https://services.arcgis.com/ZzrwjTRez6FJiOq4/arcgis/rest/services/Fire_Restrictions/FeatureServer/0/query?f=json&where=Status+IN+%28%27Active%27%2C+%27Standing%27%2C+%27Future_Rescind%27%2C+%27Future_Supersede%27%2C+%27Recurring%27%29&geometryType=esriGeometryPoint&geometry=%7B%22x%22%3A-111.89%2C%22y%22%3A40.98%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=10&units=esriSRUnit_StatuteMile&outFields=RestrictionType%2CStatus%2CEffectiveDate%2CRescindedDate%2CAgency%2CShort_AreaDescription&returnGeometry=false&resultRecordCount=200"
   },
   "response": {
     "objectIdFieldName": "OBJECTID",
@@ -116,6 +116,22 @@
         "defaultValue": null
       },
       {
+        "name": "EffectiveDate",
+        "type": "esriFieldTypeDateOnly",
+        "alias": "Effective Date",
+        "sqlType": "sqlTypeOther",
+        "domain": null,
+        "defaultValue": null
+      },
+      {
+        "name": "RescindedDate",
+        "type": "esriFieldTypeDateOnly",
+        "alias": "Rescinded Date",
+        "sqlType": "sqlTypeOther",
+        "domain": null,
+        "defaultValue": null
+      },
+      {
         "name": "Agency",
         "type": "esriFieldTypeString",
         "alias": "Agency",
@@ -168,30 +184,48 @@
         "attributes": {
           "RestrictionType": "Prevention Order",
           "Status": "Active",
+          "EffectiveDate": "2025-06-17",
+          "RescindedDate": null,
           "Agency": "3-BLM",
           "Short_AreaDescription": "Bureau of Land Management (BLM) - Statewide"
         }
       },
       {
         "attributes": {
-          "RestrictionType": "Closure",
-          "Status": "Active",
+          "RestrictionType": "Special Order",
+          "Status": "Standing",
+          "EffectiveDate": "2021-07-16",
+          "RescindedDate": "2026-07-17",
           "Agency": "2-USFS",
-          "Short_AreaDescription": "Forest Service (USFS) - Cottonwood Fire Closure"
+          "Short_AreaDescription": "Forest Service (USFS) - Intermountain Region"
         }
       },
       {
         "attributes": {
-          "RestrictionType": "Closure",
-          "Status": "Active",
-          "Agency": "3-BLM",
-          "Short_AreaDescription": "Bureau of Land Management (BLM) - Cottonwood Fire Closure"
+          "RestrictionType": "Special Order",
+          "Status": "Recurring",
+          "EffectiveDate": "2026-04-01",
+          "RescindedDate": "2026-10-31",
+          "Agency": "2-USFS",
+          "Short_AreaDescription": "Forest Service (USFS) - Uinta-Wasatch-Cache NF (Davis Co. Bonneville Shoreline Bench)"
+        }
+      },
+      {
+        "attributes": {
+          "RestrictionType": "Special Order",
+          "Status": "Recurring",
+          "EffectiveDate": "2026-04-01",
+          "RescindedDate": "2026-10-31",
+          "Agency": "2-USFS",
+          "Short_AreaDescription": "Forest Service (USFS) - Uinta-Wasatch-Cache NF (Salt Lake RD: Farmington/Ward Cyn Rds)"
         }
       },
       {
         "attributes": {
           "RestrictionType": "Stage 1",
           "Status": "Active",
+          "EffectiveDate": "2026-09-05",
+          "RescindedDate": null,
           "Agency": "3-BLM",
           "Short_AreaDescription": "Bureau of Land Management (BLM) - West Desert District"
         }

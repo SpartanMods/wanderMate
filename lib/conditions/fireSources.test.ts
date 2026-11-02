@@ -9,21 +9,28 @@ import {
   UTAH_FFSL_SOURCE,
   buildQueryUrl,
   interpretResponse,
+  todayForFireOrders,
+  unknownAnswer,
   type FireSource,
   type SourceAnswer,
 } from "@/lib/conditions/fireSources";
 import { FIRE_COVERAGE } from "@/lib/conditions/fireCoverage";
 import { combineAnswers } from "@/lib/conditions/fireRestrictions";
 
-// Real responses recorded by scripts/record-fire-fixtures.mjs (2026-11-02).
-// They were recorded with an 80 mi radius, so they hold more features than a
-// 10 mi query would; interpretation doesn't depend on the radius.
-function recorded(name: string): { response: unknown } {
+// Real responses recorded by scripts/record-fire-fixtures.mjs (2026-11-02),
+// using the same query (10 mi radius) the app sends.
+type ArcgisBody = { features: { attributes: Record<string, unknown> }[] };
+
+function recorded(name: string): ArcgisBody {
   const path = new URL(`./__fixtures__/fire/${name}.json`, import.meta.url);
-  return JSON.parse(readFileSync(path, "utf8"));
+  return JSON.parse(readFileSync(path, "utf8")).response;
 }
 
-const UNKNOWN: SourceAnswer = { kind: "unknown" };
+/** Date the fixtures were recorded; Davis County's recurring season had ended. */
+const RECORDED_ON = "2026-11-02";
+const IN_RECURRING_SEASON = "2026-07-01";
+
+const FAILED = unknownAnswer("failed");
 const CLEAR: SourceAnswer = { kind: "clear" };
 
 /** Wraps attribute rows in an ArcGIS query body. */
@@ -33,39 +40,74 @@ const body = (...rows: Record<string, unknown>[]) => ({
 
 // --- recorded responses --------------------------------------------------------
 
-test("BLM-RMA (recorded, Newcastle WY): Stage 1 field office wins over Year Round", () => {
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, recorded("blm-rma-stage1-newcastle-wy").response), {
+test("BLM-RMA (recorded, Newcastle WY): Stage 1 field office", () => {
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, recorded("blm-rma-stage1-newcastle-wy")), {
     kind: "restriction",
     level: "Stage 1",
-    area: "Newcastle Field Office, Crook County",
+    area: "Newcastle Field Office, Weston County",
   });
 });
 
 test("BLM-RMA (recorded, Rabbit Valley): only Year Round rules = clear", () => {
-  const fixture = recorded("blm-rma-year-round-rabbit-valley").response;
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, fixture), CLEAR);
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, recorded("blm-rma-year-round-rabbit-valley")), CLEAR);
 });
 
-test("Utah FFSL (recorded, West Desert): Closure outranks Stage 1 and prevention orders", () => {
-  assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, recorded("utah-ffsl-stage1-west-desert").response), {
-    kind: "restriction",
-    level: "Closure",
-    area: "Forest Service (USFS) - Cottonwood Fire Closure",
-  });
+test("Utah FFSL (recorded, Farmington): active Stage 1 wins; out-of-season recurring orders don't count", () => {
+  assert.deepEqual(
+    interpretResponse(UTAH_FFSL_SOURCE, recorded("utah-ffsl-stage1-recurring-farmington"), RECORDED_ON),
+    { kind: "restriction", level: "Stage 1", area: "Bureau of Land Management (BLM) - West Desert District" }
+  );
 });
 
-test("Utah FFSL: prevention orders alone are clear", () => {
-  const fixture = recorded("utah-ffsl-capitol-reef").response as { features: { attributes: { RestrictionType: string } }[] };
-  const preventionOnly = {
-    ...fixture,
-    features: fixture.features.filter((f) => f.attributes.RestrictionType === "Prevention Order"),
-  };
-  assert.equal(preventionOnly.features.length, 1);
-  assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, preventionOnly), CLEAR);
+test("Utah FFSL (recorded, Capitol Reef): prevention and standing special orders are clear", () => {
+  assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, recorded("utah-ffsl-capitol-reef"), RECORDED_ON), CLEAR);
+});
+
+/** The Farmington fixture's recurring rows, re-typed as a Stage 2 order. */
+function recurringStage2(): ArcgisBody {
+  const fixture = recorded("utah-ffsl-stage1-recurring-farmington");
+  const recurring = fixture.features.filter((f) => f.attributes.Status === "Recurring");
+  assert.ok(recurring.length > 0);
+  return { ...fixture, features: recurring.map((f) => ({ attributes: { ...f.attributes, RestrictionType: "Stage 2" } })) };
+}
+
+test("Utah FFSL: a recurring order counts only inside its date window", () => {
+  assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, recurringStage2(), RECORDED_ON), CLEAR);
+  assert.equal(
+    interpretResponse(UTAH_FFSL_SOURCE, recurringStage2(), IN_RECURRING_SEASON).kind,
+    "restriction"
+  );
+});
+
+test("Utah FFSL: a recurring order without dates is unreadable, so unknown", () => {
+  const body = recurringStage2();
+  body.features = body.features.map((f) => ({ attributes: { ...f.attributes, RescindedDate: null } }));
+  assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, body, RECORDED_ON), unknownAnswer("unreadable"));
+});
+
+test("Utah FFSL: orders scheduled to end later are still in force", () => {
+  const body = recurringStage2();
+  for (const status of ["Future_Rescind", "Future_Supersede"]) {
+    const scheduled = { features: body.features.map((f) => ({ attributes: { ...f.attributes, Status: status } })) };
+    assert.equal(interpretResponse(UTAH_FFSL_SOURCE, scheduled, RECORDED_ON).kind, "restriction");
+  }
+});
+
+test("Utah FFSL: the query asks for every in-force status", () => {
+  const where = new URL(buildQueryUrl(UTAH_FFSL_SOURCE, 40, -111)).searchParams.get("where");
+  for (const status of ["Active", "Standing", "Future_Rescind", "Future_Supersede", "Recurring"]) {
+    assert.ok(where?.includes(`'${status}'`), status);
+  }
+  assert.ok(!where?.includes("'Future'"), "orders not yet effective are excluded");
+});
+
+test("todayForFireOrders: Mountain-time calendar date", () => {
+  // 03:00 UTC on Nov 2 is still Nov 1 in Denver.
+  assert.equal(todayForFireOrders(new Date("2026-11-02T03:00:00Z")), "2026-11-01");
 });
 
 test("USFS PSICC (recorded): code '1' is No Restrictions, not Stage 1", () => {
-  assert.deepEqual(interpretResponse(USFS_PSICC_SOURCE, recorded("usfs-psicc-buena-vista").response), CLEAR);
+  assert.deepEqual(interpretResponse(USFS_PSICC_SOURCE, recorded("usfs-psicc-buena-vista")), CLEAR);
 });
 
 test("USFS PSICC: codes '2' / '3' map to Stage 1 / Stage 2", () => {
@@ -80,43 +122,58 @@ test("USFS PSICC: codes '2' / '3' map to Stage 1 / Stage 2", () => {
 
 const blmRow = { restriction_status: "Year Round", admin_unit_nm: "X", county_name: "Y", state: "Colorado" };
 
-test("validation: ArcGIS error body is unknown", () => {
-  const error = { error: { code: 400, message: "Invalid query parameters", details: [] } };
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, error), UNKNOWN);
+test("validation: an ArcGIS error body is a failure", () => {
+  const transient = { error: { code: 500, message: "Internal error", details: [] } };
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, transient), FAILED);
+});
+
+test("validation: ArcGIS 400 (stale URL or fields) is a failure logged as a config error", (t) => {
+  const errorLog = t.mock.method(console, "error", () => {});
+  const staleUrl = { error: { code: 400, message: "Invalid URL", details: ["Invalid URL"] } };
+  assert.deepEqual(interpretResponse(USFS_PSICC_SOURCE, staleUrl), FAILED);
+  assert.equal(errorLog.mock.callCount(), 1);
+  assert.match(String(errorLog.mock.calls[0].arguments[0]), /usfs-psicc.*out of date/);
 });
 
 test("validation: a missing requested field is unknown", () => {
   const { restriction_status: _dropped, ...withoutStatus } = blmRow;
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, body(withoutStatus)), UNKNOWN);
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, body(withoutStatus)), FAILED);
 });
 
 test("validation: an unexpected coded value is unknown", () => {
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, body({ ...blmRow, restriction_status: "Stage 4" })), UNKNOWN);
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, body({ ...blmRow, restriction_status: "Stage 4" })), FAILED);
   assert.deepEqual(
     interpretResponse(USFS_PSICC_SOURCE, body({ FireRestct: "4", DISTRICTNA: null, FORESTNAME: null })),
-    UNKNOWN
+    FAILED
   );
 });
 
-test("validation: a non-active Utah order slipping past the filter is unknown", () => {
-  const row = { RestrictionType: "Stage 1", Status: "Rescinded", Agency: null, Short_AreaDescription: null };
-  assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, body(row)), UNKNOWN);
+test("validation: a rescinded Utah order slipping past the filter is a failure", () => {
+  const row = {
+    RestrictionType: "Stage 1",
+    Status: "Rescinded",
+    EffectiveDate: null,
+    RescindedDate: null,
+    Agency: null,
+    Short_AreaDescription: null,
+  };
+  assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, body(row)), FAILED);
 });
 
 test("validation: truncated results are unknown", () => {
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, { ...body(blmRow), exceededTransferLimit: true }), UNKNOWN);
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, { ...body(blmRow), exceededTransferLimit: true }), FAILED);
 });
 
 test("null status: unknown unless another feature is a restriction", () => {
   const unreadable = { ...blmRow, restriction_status: null };
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, body(blmRow, unreadable)), UNKNOWN);
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, body(blmRow, unreadable)), unknownAnswer("unreadable"));
   const stage1 = { ...blmRow, restriction_status: "Stage 1" };
   assert.equal(interpretResponse(BLM_RMA_SOURCE, body(unreadable, stage1)).kind, "restriction");
 });
 
 test("no features: unknown for blanket layers, clear for order-only layers", () => {
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, body()), UNKNOWN);
-  assert.deepEqual(interpretResponse(USFS_PSICC_SOURCE, body()), UNKNOWN);
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, body()), unknownAnswer("not_covered"));
+  assert.deepEqual(interpretResponse(USFS_PSICC_SOURCE, body()), unknownAnswer("not_covered"));
   assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, body()), CLEAR);
 });
 
@@ -159,7 +216,7 @@ test("combine: the worst restriction wins and names its source", () => {
 test("combine: a restriction shows even with incomplete coverage or a failed source", () => {
   const result = combineAnswers(
     [
-      { id: "usfs-psicc", answer: UNKNOWN },
+      { id: "usfs-psicc", answer: FAILED },
       { id: "blm-rma", answer: stage("Stage 1") },
     ],
     { complete: false },
@@ -179,7 +236,7 @@ test("combine: 'none' needs complete coverage and every source clear", () => {
 
   assert.equal(combineAnswers(allClear, { complete: false }, AT), null);
   assert.equal(
-    combineAnswers([{ id: "usfs-psicc", answer: CLEAR }, { id: "blm-rma", answer: UNKNOWN }], { complete: true }, AT),
+    combineAnswers([{ id: "usfs-psicc", answer: CLEAR }, { id: "blm-rma", answer: FAILED }], { complete: true }, AT),
     null
   );
   assert.equal(combineAnswers([], { complete: true }, AT), null);

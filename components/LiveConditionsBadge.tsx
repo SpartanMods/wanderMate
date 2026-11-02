@@ -63,8 +63,7 @@ export function LiveConditionsBadge({
           </span>
           <div>
             <p className="text-sm font-semibold text-amber-200">
-              Fire restriction active
-              {fireStatus === "restriction" ? "" : ` — ${FIRE_STATUS_LABEL[fireStatus]}`}
+              Fire restriction active — {FIRE_STATUS_LABEL[fireStatus]}
             </p>
             {fire.affectedArea && (
               <p className="text-xs text-amber-200/70">{fire.affectedArea}</p>

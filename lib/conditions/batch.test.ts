@@ -43,7 +43,12 @@ test("isDegraded: complete data and no-coordinates zones are not degraded", () =
   assert.equal(isDegraded([a, b], { [a.id]: withFire(NO_RESTRICTION), [b.id]: noCoordsConditions() }), false);
 });
 
-test("isDegraded: a failed fire lookup or a missing zone is degraded", () => {
-  assert.equal(isDegraded([a, b], { [a.id]: withFire(NO_RESTRICTION), [b.id]: withFire(null) }), true);
+test("isDegraded: a failed lookup or a missing zone is degraded", () => {
+  const failed = { ...withFire(null), hasError: true };
+  assert.equal(isDegraded([a, b], { [a.id]: withFire(NO_RESTRICTION), [b.id]: failed }), true);
   assert.equal(isDegraded([a, b], { [a.id]: withFire(NO_RESTRICTION) }), true);
+});
+
+test("isDegraded: fire unknown because no source covers the zone is not degraded", () => {
+  assert.equal(isDegraded([a, b], { [a.id]: withFire(NO_RESTRICTION), [b.id]: withFire(null) }), false);
 });

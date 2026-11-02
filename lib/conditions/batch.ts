@@ -19,14 +19,14 @@ export function parseZoneIds(raw: string | null, zones: TripZone[]): TripZone[] 
 }
 
 /**
- * True when any zone's fire status is missing because a lookup failed, timed
- * out, or couldn't be interpreted (as opposed to "no coordinates"), or a zone
- * is absent. Such responses must not be cached for long (#33 review).
+ * True when a zone is absent or one of its lookups failed or timed out. Such
+ * responses must not be cached for long (#33 review). A fire status that is
+ * unknown because no source covers the zone is stable, so it isn't degraded.
  */
 export function isDegraded(zones: TripZone[], conditions: ConditionsByZone): boolean {
   return zones.some((z) => {
     const c = conditions[z.id];
-    return !c || (c.fire === null && c.unavailableReason === null);
+    return !c || c.hasError;
   });
 }
 
