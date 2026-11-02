@@ -19,7 +19,7 @@ const fire = (overrides: Partial<FireRestriction>): FireRestriction => ({
   hasActiveRestriction: false,
   restrictionLevel: null,
   affectedArea: null,
-  source: "usfs",
+  sources: ["usfs-psicc"],
   fetchedAt: "2026-07-01T00:00:00.000Z",
   ...overrides,
 });

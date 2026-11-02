@@ -1,6 +1,6 @@
 // Client-safe fire-status helpers (types only, no upstream fetch code), so
 // the results page and cards can import them without bundling the adapters.
-import type { FireLevel, LiveConditions } from "./types";
+import type { FireLevel, FireSourceId, LiveConditions } from "./types";
 
 /**
  * One fire state per zone: a restriction level, an active restriction whose
@@ -30,4 +30,11 @@ export const FIRE_STATUS_LABEL: Record<FireStatus, string> = {
   restriction: "Fire restriction",
   none: "No fire restrictions reported",
   unknown: "Fire status unavailable",
+};
+
+/** Short source names for "Source: …" lines (#11). */
+export const FIRE_SOURCE_LABEL: Record<FireSourceId, string> = {
+  "blm-rma": "BLM",
+  "utah-ffsl": "Utah Fire Info (FFSL)",
+  "usfs-psicc": "USFS",
 };

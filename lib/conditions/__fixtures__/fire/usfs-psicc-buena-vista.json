@@ -1,0 +1,114 @@
+{
+  "_recorded": {
+    "at": "2026-11-02T02:41:25.902Z",
+    "source": "usfs-psicc",
+    "lat": 38.8422,
+    "lng": -106.1311,
+    "url": "https://services1.arcgis.com/gGHDlz6USftL5Pau/arcgis/rest/services/PSICCRangerDistrictsFireRestrictions_2026/FeatureServer/3/query?f=json&where=1%3D1&geometryType=esriGeometryPoint&geometry=%7B%22x%22%3A-106.1311%2C%22y%22%3A38.8422%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=80&units=esriSRUnit_StatuteMile&outFields=FireRestct%2CDISTRICTNA%2CFORESTNAME&returnGeometry=false&resultRecordCount=200"
+  },
+  "response": {
+    "objectIdFieldName": "OBJECTID",
+    "uniqueIdField": {
+      "name": "OBJECTID",
+      "isSystemMaintained": true
+    },
+    "globalIdFieldName": "",
+    "geometryType": "esriGeometryPolygon",
+    "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+    },
+    "fields": [
+      {
+        "name": "FireRestct",
+        "type": "esriFieldTypeString",
+        "alias": "FireRestct",
+        "sqlType": "sqlTypeOther",
+        "length": 2000,
+        "domain": {
+          "type": "codedValue",
+          "name": "RestrictionLevel",
+          "mergePolicy": "esriMPTDefaultValue",
+          "splitPolicy": "esriSPTDefaultValue",
+          "codedValues": [
+            {
+              "name": "No Restrictions",
+              "code": "1"
+            },
+            {
+              "name": "Stage 1",
+              "code": "2"
+            },
+            {
+              "name": "Stage 2",
+              "code": "3"
+            }
+          ]
+        },
+        "defaultValue": null
+      },
+      {
+        "name": "DISTRICTNA",
+        "type": "esriFieldTypeString",
+        "alias": "DISTRICTNA",
+        "sqlType": "sqlTypeOther",
+        "length": 2000,
+        "domain": null,
+        "defaultValue": null
+      },
+      {
+        "name": "FORESTNAME",
+        "type": "esriFieldTypeString",
+        "alias": "FORESTNAME",
+        "sqlType": "sqlTypeOther",
+        "length": 2000,
+        "domain": null,
+        "defaultValue": null
+      }
+    ],
+    "features": [
+      {
+        "attributes": {
+          "FireRestct": "1",
+          "DISTRICTNA": "San Carlos Ranger District",
+          "FORESTNAME": "San Isabel National Forest"
+        }
+      },
+      {
+        "attributes": {
+          "FireRestct": "1",
+          "DISTRICTNA": "South Park Ranger District",
+          "FORESTNAME": "Pike National Forest"
+        }
+      },
+      {
+        "attributes": {
+          "FireRestct": "1",
+          "DISTRICTNA": "South Platte Ranger District",
+          "FORESTNAME": "Pike National Forest"
+        }
+      },
+      {
+        "attributes": {
+          "FireRestct": "1",
+          "DISTRICTNA": "Salida Ranger District",
+          "FORESTNAME": "San Isabel National Forest"
+        }
+      },
+      {
+        "attributes": {
+          "FireRestct": "1",
+          "DISTRICTNA": "Pikes Peak Ranger District",
+          "FORESTNAME": "Pike National Forest"
+        }
+      },
+      {
+        "attributes": {
+          "FireRestct": "1",
+          "DISTRICTNA": "Leadville Ranger District",
+          "FORESTNAME": "San Isabel National Forest"
+        }
+      }
+    ]
+  }
+}

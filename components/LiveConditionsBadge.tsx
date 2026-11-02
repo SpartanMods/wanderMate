@@ -1,5 +1,10 @@
 import type { ConditionsUnavailableReason, LiveConditions } from "@/lib/conditions";
-import { FIRE_STATUS_LABEL, fireStatusOf, type FireStatus } from "@/lib/conditions/fireStatus";
+import {
+  FIRE_SOURCE_LABEL,
+  FIRE_STATUS_LABEL,
+  fireStatusOf,
+  type FireStatus,
+} from "@/lib/conditions/fireStatus";
 
 const UNAVAILABLE_REASON_TEXT: Record<ConditionsUnavailableReason, string> = {
   no_coordinates: "No map location for this zone yet, so live conditions can't be checked.",
@@ -35,7 +40,7 @@ export function LiveConditionsBadge({
   const hasAnyData = weather || fire || nearbyFacilities.length > 0;
   // Same status mapping as result cards, so both views always agree.
   const fireStatus = fireStatusOf(conditions);
-  const fireSource = fire ? (fire.source === "usfs" ? "USFS" : "BLM") : null;
+  const fireSource = fire ? fire.sources.map((id) => FIRE_SOURCE_LABEL[id]).join(", ") : null;
 
   if (!hasAnyData) {
     return (

@@ -12,12 +12,19 @@ export type FireLevel = "Stage 1" | "Stage 2 (partial)" | "Stage 2" | "Stage 3" 
 
 export type ConditionsUnavailableReason = "no_coordinates";
 
+/** Upstream fire-restriction layers (#11). Definitions live in fireSources.ts. */
+export type FireSourceId = "blm-rma" | "utah-ffsl" | "usfs-psicc";
+
 export type FireRestriction = {
   hasActiveRestriction: boolean;
   /** Null when no active restriction */
   restrictionLevel: FireLevel | null;
   affectedArea: string | null;
-  source: "usfs" | "blm";
+  /**
+   * Sources behind this answer: the one reporting the restriction, or, for
+   * "no restriction", every source that confirmed it.
+   */
+  sources: FireSourceId[];
   fetchedAt: string;
 };
 

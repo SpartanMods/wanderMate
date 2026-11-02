@@ -11,6 +11,7 @@ export type {
   WeatherCondition,
   FireLevel,
   FireRestriction,
+  FireSourceId,
   RidbFacility,
 } from "./types";
 
@@ -34,7 +35,7 @@ export async function fetchLiveConditions(zone: TripZone): Promise<LiveCondition
 
   const [weather, fire, nearbyFacilities] = await Promise.allSettled([
     fetchWeatherForCoords(lat, lng),
-    fetchFireRestrictions(lat, lng),
+    fetchFireRestrictions(zone.id, lat, lng),
     fetchNearbyFacilities(lat, lng),
   ]);
 

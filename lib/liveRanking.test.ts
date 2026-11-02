@@ -30,7 +30,7 @@ function restricted(level: FireLevel): LiveConditions {
       hasActiveRestriction: true,
       restrictionLevel: level,
       affectedArea: null,
-      source: "usfs",
+      sources: ["usfs-psicc"],
       fetchedAt: "2026-07-01T00:00:00.000Z",
     },
     nearbyFacilities: [],

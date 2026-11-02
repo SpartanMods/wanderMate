@@ -1,0 +1,201 @@
+{
+  "_recorded": {
+    "at": "2026-11-02T02:41:24.948Z",
+    "source": "utah-ffsl",
+    "lat": 39.35,
+    "lng": -112.58,
+    "url": "https://services.arcgis.com/ZzrwjTRez6FJiOq4/arcgis/rest/services/Fire_Restrictions/FeatureServer/0/query?f=json&where=Status+%3D+%27Active%27&geometryType=esriGeometryPoint&geometry=%7B%22x%22%3A-112.58%2C%22y%22%3A39.35%2C%22spatialReference%22%3A%7B%22wkid%22%3A4326%7D%7D&inSR=4326&spatialRel=esriSpatialRelIntersects&distance=80&units=esriSRUnit_StatuteMile&outFields=RestrictionType%2CStatus%2CAgency%2CShort_AreaDescription&returnGeometry=false&resultRecordCount=200"
+  },
+  "response": {
+    "objectIdFieldName": "OBJECTID",
+    "uniqueIdField": {
+      "name": "OBJECTID",
+      "isSystemMaintained": true
+    },
+    "globalIdFieldName": "",
+    "geometryType": "esriGeometryPolygon",
+    "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+    },
+    "fields": [
+      {
+        "name": "RestrictionType",
+        "type": "esriFieldTypeString",
+        "alias": "Restriction Type",
+        "sqlType": "sqlTypeOther",
+        "length": 64,
+        "domain": {
+          "type": "codedValue",
+          "name": "Fire_Restrictions_RestrictionType_027586c6-9f63-4c7d-8a69-326e726ab88e",
+          "codedValues": [
+            {
+              "name": "Fire Prevention Order",
+              "code": "Prevention Order"
+            },
+            {
+              "name": "Stage 1 Fire Restriction",
+              "code": "Stage 1"
+            },
+            {
+              "name": "Stage 2 Fire Restriction",
+              "code": "Stage 2"
+            },
+            {
+              "name": "Special Order",
+              "code": "Special Order"
+            },
+            {
+              "name": "Ordinance",
+              "code": "Ordinance"
+            },
+            {
+              "name": "Other Type of Order",
+              "code": "Other"
+            },
+            {
+              "name": "Stage 3 Fire Restriction",
+              "code": "Stage 3"
+            },
+            {
+              "name": "Fire Restriction Order",
+              "code": "NPS Order"
+            },
+            {
+              "name": "Closure",
+              "code": "Closure"
+            }
+          ]
+        },
+        "defaultValue": null
+      },
+      {
+        "name": "Status",
+        "type": "esriFieldTypeString",
+        "alias": "Current Status",
+        "sqlType": "sqlTypeOther",
+        "length": 32,
+        "domain": {
+          "type": "codedValue",
+          "name": "Fire_Restrictions_Status_a814861f-2f69-476f-8947-481c20a7550d",
+          "codedValues": [
+            {
+              "name": "Active",
+              "code": "Active"
+            },
+            {
+              "name": "Rescinded",
+              "code": "Rescinded"
+            },
+            {
+              "name": "Superseded",
+              "code": "Superseded"
+            },
+            {
+              "name": "Standing Order",
+              "code": "Standing"
+            },
+            {
+              "name": "Recurring Order",
+              "code": "Recurring"
+            },
+            {
+              "name": "Effective Date in Future",
+              "code": "Future"
+            },
+            {
+              "name": "Rescindment Date in Future",
+              "code": "Future_Rescind"
+            },
+            {
+              "name": "Superseded in Future",
+              "code": "Future_Supersede"
+            }
+          ]
+        },
+        "defaultValue": null
+      },
+      {
+        "name": "Agency",
+        "type": "esriFieldTypeString",
+        "alias": "Agency",
+        "sqlType": "sqlTypeOther",
+        "length": 64,
+        "domain": {
+          "type": "codedValue",
+          "name": "Fire_Restrictions_Agency_a2d06dd6-151f-4270-8b4b-df79f73a0fd2",
+          "codedValues": [
+            {
+              "name": "State of Utah",
+              "code": "1-FFSL"
+            },
+            {
+              "name": "US Forest Service",
+              "code": "2-USFS"
+            },
+            {
+              "name": "Bureau of Land Management",
+              "code": "3-BLM"
+            },
+            {
+              "name": "National Park Service",
+              "code": "4-NPS"
+            },
+            {
+              "name": "Navajo Nation",
+              "code": "5-Navajo"
+            },
+            {
+              "name": "Ute Indian Tribe",
+              "code": "6-Ute"
+            }
+          ]
+        },
+        "defaultValue": null
+      },
+      {
+        "name": "Short_AreaDescription",
+        "type": "esriFieldTypeString",
+        "alias": "Short Area Description: Jurisdiction - Location",
+        "sqlType": "sqlTypeOther",
+        "length": 256,
+        "domain": null,
+        "defaultValue": null
+      }
+    ],
+    "features": [
+      {
+        "attributes": {
+          "RestrictionType": "Prevention Order",
+          "Status": "Active",
+          "Agency": "3-BLM",
+          "Short_AreaDescription": "Bureau of Land Management (BLM) - Statewide"
+        }
+      },
+      {
+        "attributes": {
+          "RestrictionType": "Closure",
+          "Status": "Active",
+          "Agency": "2-USFS",
+          "Short_AreaDescription": "Forest Service (USFS) - Cottonwood Fire Closure"
+        }
+      },
+      {
+        "attributes": {
+          "RestrictionType": "Closure",
+          "Status": "Active",
+          "Agency": "3-BLM",
+          "Short_AreaDescription": "Bureau of Land Management (BLM) - Cottonwood Fire Closure"
+        }
+      },
+      {
+        "attributes": {
+          "RestrictionType": "Stage 1",
+          "Status": "Active",
+          "Agency": "3-BLM",
+          "Short_AreaDescription": "Bureau of Land Management (BLM) - West Desert District"
+        }
+      }
+    ]
+  }
+}

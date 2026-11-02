@@ -35,7 +35,7 @@ const NO_RESTRICTION: LiveConditions["fire"] = {
   hasActiveRestriction: false,
   restrictionLevel: null,
   affectedArea: null,
-  source: "usfs",
+  sources: ["usfs-psicc"],
   fetchedAt: "x",
 };
 
