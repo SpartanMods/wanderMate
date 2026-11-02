@@ -25,7 +25,7 @@ firerestrictions.us was taken over by a spam site; don't use it as a source.
 | 5 | URL hash preference state (replace localStorage) | ✅ Done |
 | 6 | Results page rebuilt (5–7 zones, user-select comparison) | ✅ Done |
 | 7 | Public zone detail pages `/zones/[id]` | ✅ Done |
-| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🟡 Nearly done — done: #11 #12–#19 #28 (PR open) #30 · open: #36 (RIDB `status` field) |
+| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🟡 Nearly done — done: #11 #12–#19 #30 · PRs open: #28, #36 · open: extend `hasError` |
 | 9 | Auth pages (login, magic link, Google OAuth, callback) | ⬜ Pending |
 | 10 | Save Trip + Field Report CRUD + dashboard | ⬜ Pending |
 | 11 | Profile baseline preferences pre-fill planner form | ⬜ Pending |
@@ -39,6 +39,7 @@ firerestrictions.us was taken over by a spam site; don't use it as a source.
 - **Monetization:** Freemium; pro tier gates saved trips, field reports, offline cards
 - **Live fire conditions (#13):** callouts + user filter (own `fire=` query param, hides nothing by default) + graduated ranking penalty (Stage 1 −5, Stage 2 −12, Stage 3 / Closure −30, Unknown 0). "Stage 2 (partial)" (−7.5) and the unspecified `restriction` status were removed in #11: no source can report them. Sources and coverage: see the #11 entry. Batch-fetch all eligible zones concurrently, show "Loading live data…", rank once after all settle. 10s timeout per request; weather.gov's two calls share one 10s limit. Timeout/error = unknown.
 - **Fire sources (#11):** Rocky Mountain Area BLM polygons (CO/WY BLM), Utah FFSL statewide layer (all agencies in Utah), USFS PSICC districts (Pike & San Isabel). Defined in `lib/conditions/fireSources.ts`, per-zone mapping in `fireCoverage.ts`. GMUG layer excluded (stale), other CO/WY national forests have no layer, so those zones are unknown. Only Stage 1/2/3 and Closure count; BLM "Year Round" and Utah prevention/special/standing orders = no restriction. Utah orders count when Status is Active, Standing, Future_Rescind or Future_Supersede, or Recurring within its EffectiveDate–RescindedDate window (Mountain-time date). "No restrictions" only when the zone's coverage is complete and every source answered clear; a found restriction always shows. Search radius 10 mi. Every response is Zod-validated; a mismatch or truncated result = unknown. A failed source lookup is retried once under a cache key that changes every 5 min (ArcGIS errors are HTTP 200, so Next would otherwise cache them for the full hour) and sets `LiveConditions.hasError`; `isDegraded` uses `hasError`, so zones that are unknown only for lack of coverage don't shorten the API cache. ArcGIS error 400 is logged with `console.error` as stale config (the PSICC URL carries a year).
+- **RIDB facilities (#36):** no open/closed status. RIDB has no such field; the old `status` read `FacilityAdaAccess` (wheelchair access). The badge lists nearby facilities by name only.
 - **Missing must-have penalty (#19):** −10 per activity (was −20), cap stays −45
 - **Results list (#29):** no score cutoff — every zone passing the hard constraints is shown (up to 7), ranked; per-card quality labels flag weak matches. Closest-match fallback only when nothing passes the hard constraints.
 - **Preferences in URLs (#18):** `decodePrefs` validates with the Zod schema; activity keys limited to the known list.
@@ -54,9 +55,8 @@ State as of PR #35 (merged): live fire data comes from three verified
 sources and covers 10 of 24 zones; the other 14 are honestly unknown. #11 and
 the API-access tickets #20–#26 are closed.
 
-1. **#36 — RIDB `status` reads the ADA-access field.** RIDB has no
-   open/closed field; recommended fix is to drop `status` (owner decision).
-   Test fixtures are now real recordings: `scripts/record-conditions-fixtures.mjs`
+1. **Merge #37 (#28 real fixtures), then the #36 PR stacked on it** (drops the
+   RIDB facility `status`: RIDB has no open/closed field). Test fixtures are now real recordings: `scripts/record-conditions-fixtures.mjs`
    (weather.gov, RIDB) and `scripts/record-fire-fixtures.mjs`; load them with
    `recorded()` from `lib/conditions/__fixtures__/responses.ts`.
 2. **Extend `LiveConditions.hasError` to weather and RIDB.** Fire lookups set it

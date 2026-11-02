@@ -212,8 +212,6 @@ test("ridb: maps facilities from RECDATA (recorded)", async () => {
     facilityName: "LOTTIS CREEK CAMPGROUND",
     facilityType: "Campground",
     reservable: true,
-    // RIDB has no open/closed field; `status` reads the ADA-access field (#36).
-    status: null,
   });
 });
 
