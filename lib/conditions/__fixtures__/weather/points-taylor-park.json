@@ -1,0 +1,119 @@
+{
+  "_recorded": {
+    "at": "2026-11-02T04:11:31.655Z",
+    "url": "https://api.weather.gov/points/38.8388,-106.5784",
+    "status": 200
+  },
+  "response": {
+    "@context": [
+      "https://geojson.org/geojson-ld/geojson-context.jsonld",
+      {
+        "@version": "1.1",
+        "wx": "https://api.weather.gov/ontology#",
+        "s": "https://schema.org/",
+        "geo": "http://www.opengis.net/ont/geosparql#",
+        "unit": "http://codes.wmo.int/common/unit/",
+        "@vocab": "https://api.weather.gov/ontology#",
+        "geometry": {
+          "@id": "s:GeoCoordinates",
+          "@type": "geo:wktLiteral"
+        },
+        "city": "s:addressLocality",
+        "state": "s:addressRegion",
+        "distance": {
+          "@id": "s:Distance",
+          "@type": "s:QuantitativeValue"
+        },
+        "bearing": {
+          "@type": "s:QuantitativeValue"
+        },
+        "value": {
+          "@id": "s:value"
+        },
+        "unitCode": {
+          "@id": "s:unitCode",
+          "@type": "@id"
+        },
+        "forecastOffice": {
+          "@type": "@id"
+        },
+        "forecastGridData": {
+          "@type": "@id"
+        },
+        "publicZone": {
+          "@type": "@id"
+        },
+        "county": {
+          "@type": "@id"
+        }
+      }
+    ],
+    "id": "https://api.weather.gov/points/38.8388,-106.5784",
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -106.5784,
+        38.8388
+      ]
+    },
+    "properties": {
+      "@id": "https://api.weather.gov/points/38.8388,-106.5784",
+      "@type": "wx:Point",
+      "cwa": "GJT",
+      "type": "land",
+      "forecastOffice": "https://api.weather.gov/offices/GJT",
+      "gridId": "GJT",
+      "gridX": 163,
+      "gridY": 85,
+      "forecast": "https://api.weather.gov/gridpoints/GJT/163,85/forecast",
+      "forecastHourly": "https://api.weather.gov/gridpoints/GJT/163,85/forecast/hourly",
+      "forecastGridData": "https://api.weather.gov/gridpoints/GJT/163,85",
+      "observationStations": "https://api.weather.gov/gridpoints/GJT/163,85/stations",
+      "relativeLocation": {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            -106.5149184,
+            38.6087216
+          ]
+        },
+        "properties": {
+          "city": "Pitkin",
+          "state": "CO",
+          "distance": {
+            "unitCode": "wmoUnit:m",
+            "value": 25700.166606239
+          },
+          "bearing": {
+            "unitCode": "wmoUnit:degree_(angle)",
+            "value": 347
+          }
+        }
+      },
+      "forecastZone": "https://api.weather.gov/zones/forecast/COZ012",
+      "county": "https://api.weather.gov/zones/county/COC051",
+      "fireWeatherZone": "https://api.weather.gov/zones/fire/COZ293",
+      "timeZone": "America/Denver",
+      "radarStation": "KGJX",
+      "astronomicalData": {
+        "sunrise": "2026-11-02T06:34:50-07:00",
+        "sunset": "2026-11-02T17:04:54-07:00",
+        "transit": "2026-11-02T11:49:52-07:00",
+        "civilTwilightBegin": "2026-11-02T06:07:15-07:00",
+        "civilTwilightEnd": "2026-11-02T17:32:28-07:00",
+        "nauticalTwilightBegin": "2026-11-02T05:35:45-07:00",
+        "nauticalTwilightEnd": "2026-11-02T18:03:59-07:00",
+        "astronomicalTwilightBegin": "2026-11-02T05:04:41-07:00",
+        "astronomicalTwilightEnd": "2026-11-02T18:35:03-07:00"
+      },
+      "nwr": {
+        "transmitter": "KXI90",
+        "sameCode": "008051",
+        "areaBroadcast": "https://api.weather.gov/radio/KXI90/broadcast",
+        "pointBroadcast": "https://api.weather.gov/points/38.8388,-106.5784/radio"
+      }
+    }
+  }
+}

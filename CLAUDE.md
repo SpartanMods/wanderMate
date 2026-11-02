@@ -25,7 +25,7 @@ firerestrictions.us was taken over by a spam site; don't use it as a source.
 | 5 | URL hash preference state (replace localStorage) | ✅ Done |
 | 6 | Results page rebuilt (5–7 zones, user-select comparison) | ✅ Done |
 | 7 | Public zone detail pages `/zones/[id]` | ✅ Done |
-| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🟡 Nearly done — done: #12–#19 #30, #11 (PR open) · open: #28 (weather/RIDB fixtures still synthetic) |
+| 8 | Live conditions layer (Weather.gov + fire restrictions) | 🟡 Nearly done — done: #11 #12–#19 #28 (PR open) #30 · open: #36 (RIDB `status` field) |
 | 9 | Auth pages (login, magic link, Google OAuth, callback) | ⬜ Pending |
 | 10 | Save Trip + Field Report CRUD + dashboard | ⬜ Pending |
 | 11 | Profile baseline preferences pre-fill planner form | ⬜ Pending |
@@ -50,26 +50,26 @@ firerestrictions.us was taken over by a spam site; don't use it as a source.
 
 ## Next Steps (handoff — start here)
 
-State as of the #11 PR (branch `claude/fire-sources-11`): live fire data is
-back for 10 of 24 zones; the other 14 are honestly unknown. Issues #21 and #23–#26
-are closed; #20 and #22 stay open until the #11 PR merges.
+State as of PR #35 (merged): live fire data comes from three verified
+sources and covers 10 of 24 zones; the other 14 are honestly unknown. #11 and
+the API-access tickets #20–#26 are closed.
 
-1. **Merge the #11 PR**, then close #11, #22 (USFS source replaced) and #20.
-2. **#28 — record real weather.gov and RIDB responses** as fixtures in
-   `lib/conditions/__fixtures__/` to replace the synthetic ones (fire fixtures
-   are already real: `__fixtures__/fire/`, from `scripts/record-fire-fixtures.mjs`).
-   If a real response doesn't match an adapter, file a bug rather than bending the fixture.
-3. **Extend `LiveConditions.hasError` to weather and RIDB.** Fire lookups set it
+1. **#36 — RIDB `status` reads the ADA-access field.** RIDB has no
+   open/closed field; recommended fix is to drop `status` (owner decision).
+   Test fixtures are now real recordings: `scripts/record-conditions-fixtures.mjs`
+   (weather.gov, RIDB) and `scripts/record-fire-fixtures.mjs`; load them with
+   `recorded()` from `lib/conditions/__fixtures__/responses.ts`.
+2. **Extend `LiveConditions.hasError` to weather and RIDB.** Fire lookups set it
    (and `isDegraded` reads it); the weather and RIDB adapters still swallow errors.
-4. **Fire coverage gaps:** GMUG, White River, Arapaho-Roosevelt and Medicine
+3. **Fire coverage gaps:** GMUG, White River, Arapaho-Roosevelt and Medicine
    Bow-Routt NFs have no current layer. Revisit if a forest publishes one; the
    source definition and the zone's `fireCoverage.ts` entry are all that change.
-5. **Task 9 — auth** (login, magic link, Google OAuth, callback) per the PRD
+4. **Task 9 — auth** (login, magic link, Google OAuth, callback) per the PRD
    (#7). Note from #30: the middleware passes through when Supabase env vars
    are missing, so protected routes must deny access themselves when Supabase
    is unavailable. Use `requireSupabaseEnv()` / `getSupabaseEnv()` from
    `lib/supabase/env.ts`.
-6. Then Task 10 (Save Trip + Field Reports, pro-gated) and Task 11 (profile
+5. Then Task 10 (Save Trip + Field Reports, pro-gated) and Task 11 (profile
    baseline preferences pre-fill the planner).
 
 **Workflow conventions used so far:** one branch + PR per ticket group

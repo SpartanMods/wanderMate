@@ -1,6 +1,5 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import tripZones from "@/data/tripZones";
 import {
   BLM_RMA_SOURCE,
@@ -16,15 +15,13 @@ import {
 } from "@/lib/conditions/fireSources";
 import { FIRE_COVERAGE } from "@/lib/conditions/fireCoverage";
 import { combineAnswers } from "@/lib/conditions/fireRestrictions";
+import { recorded } from "@/lib/conditions/__fixtures__/responses";
 
 // Real responses recorded by scripts/record-fire-fixtures.mjs (2026-11-02),
 // using the same query (10 mi radius) the app sends.
 type ArcgisBody = { features: { attributes: Record<string, unknown> }[] };
 
-function recorded(name: string): ArcgisBody {
-  const path = new URL(`./__fixtures__/fire/${name}.json`, import.meta.url);
-  return JSON.parse(readFileSync(path, "utf8")).response;
-}
+const fireFixture = (name: string): ArcgisBody => recorded<ArcgisBody>(`fire/${name}.json`).response;
 
 /** Date the fixtures were recorded; Davis County's recurring season had ended. */
 const RECORDED_ON = "2026-11-02";
@@ -41,7 +38,7 @@ const body = (...rows: Record<string, unknown>[]) => ({
 // --- recorded responses --------------------------------------------------------
 
 test("BLM-RMA (recorded, Newcastle WY): Stage 1 field office", () => {
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, recorded("blm-rma-stage1-newcastle-wy")), {
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, fireFixture("blm-rma-stage1-newcastle-wy")), {
     kind: "restriction",
     level: "Stage 1",
     area: "Newcastle Field Office, Weston County",
@@ -49,23 +46,23 @@ test("BLM-RMA (recorded, Newcastle WY): Stage 1 field office", () => {
 });
 
 test("BLM-RMA (recorded, Rabbit Valley): only Year Round rules = clear", () => {
-  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, recorded("blm-rma-year-round-rabbit-valley")), CLEAR);
+  assert.deepEqual(interpretResponse(BLM_RMA_SOURCE, fireFixture("blm-rma-year-round-rabbit-valley")), CLEAR);
 });
 
 test("Utah FFSL (recorded, Farmington): active Stage 1 wins; out-of-season recurring orders don't count", () => {
   assert.deepEqual(
-    interpretResponse(UTAH_FFSL_SOURCE, recorded("utah-ffsl-stage1-recurring-farmington"), RECORDED_ON),
+    interpretResponse(UTAH_FFSL_SOURCE, fireFixture("utah-ffsl-stage1-recurring-farmington"), RECORDED_ON),
     { kind: "restriction", level: "Stage 1", area: "Bureau of Land Management (BLM) - West Desert District" }
   );
 });
 
 test("Utah FFSL (recorded, Capitol Reef): prevention and standing special orders are clear", () => {
-  assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, recorded("utah-ffsl-capitol-reef"), RECORDED_ON), CLEAR);
+  assert.deepEqual(interpretResponse(UTAH_FFSL_SOURCE, fireFixture("utah-ffsl-capitol-reef"), RECORDED_ON), CLEAR);
 });
 
 /** The Farmington fixture's recurring rows, re-typed as a Stage 2 order. */
 function recurringStage2(): ArcgisBody {
-  const fixture = recorded("utah-ffsl-stage1-recurring-farmington");
+  const fixture = fireFixture("utah-ffsl-stage1-recurring-farmington");
   const recurring = fixture.features.filter((f) => f.attributes.Status === "Recurring");
   assert.ok(recurring.length > 0);
   return { ...fixture, features: recurring.map((f) => ({ attributes: { ...f.attributes, RestrictionType: "Stage 2" } })) };
@@ -107,7 +104,7 @@ test("todayForFireOrders: Mountain-time calendar date", () => {
 });
 
 test("USFS PSICC (recorded): code '1' is No Restrictions, not Stage 1", () => {
-  assert.deepEqual(interpretResponse(USFS_PSICC_SOURCE, recorded("usfs-psicc-buena-vista")), CLEAR);
+  assert.deepEqual(interpretResponse(USFS_PSICC_SOURCE, fireFixture("usfs-psicc-buena-vista")), CLEAR);
 });
 
 test("USFS PSICC: codes '2' / '3' map to Stage 1 / Stage 2", () => {
