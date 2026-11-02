@@ -51,7 +51,7 @@ firerestrictions.us was taken over by a spam site; don't use it as a source.
 ## Next Steps (handoff — start here)
 
 State as of the #11 PR (branch `claude/fire-sources-11`): live fire data is
-back for 11 of 24 zones; the rest are honestly unknown. Issues #21 and #23–#26
+back for 10 of 24 zones; the other 14 are honestly unknown. Issues #21 and #23–#26
 are closed; #20 and #22 stay open until the #11 PR merges.
 
 1. **Merge the #11 PR**, then close #11, #22 (USFS source replaced) and #20.
