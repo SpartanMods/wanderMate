@@ -25,17 +25,12 @@ test("isHiddenByFireFilter: closure option covers Closure and Stage 3", () => {
   assert.equal(isHiddenByFireFilter("Stage 2", hidden), false);
 });
 
-test("isHiddenByFireFilter: Stage 2 and Stage 2 (partial) are separate options", () => {
-  assert.equal(isHiddenByFireFilter("Stage 2 (partial)", parseFireFilter("stage2")), false);
-  assert.equal(isHiddenByFireFilter("Stage 2 (partial)", parseFireFilter("stage2-partial")), true);
-});
-
-test("isHiddenByFireFilter: Stage 1 option also covers an unspecified restriction", () => {
-  assert.equal(isHiddenByFireFilter("restriction", parseFireFilter("stage1")), true);
+test("parseFireFilter: retired values in old URLs are ignored", () => {
+  assert.deepEqual(Array.from(parseFireFilter("stage2-partial,stage1")), ["stage1"]);
 });
 
 test("isHiddenByFireFilter: none is never hidden; unknown only when chosen", () => {
-  const all = parseFireFilter("closure,stage2,stage2-partial,stage1,unknown");
+  const all = parseFireFilter("closure,stage2,stage1,unknown");
   assert.equal(isHiddenByFireFilter("none", all), false);
   assert.equal(isHiddenByFireFilter("unknown", new Set()), false);
   assert.equal(isHiddenByFireFilter("unknown", all), true);

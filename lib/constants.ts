@@ -227,18 +227,14 @@ export const MISSING_MUST_HAVE_PENALTY = {
   cap: 45,
 } as const;
 
-// Live fire-restriction ranking penalty, in points, by level (#13). Stage 2
-// (partial) is 1.5x Stage 1; Stage 3 matches Closure. None / unknown cost 0.
+// Live fire-restriction ranking penalty, in points, by level (#13). Stage 3
+// matches Closure. None / unknown cost 0.
 export const FIRE_PENALTY: Record<FireLevel, number> = {
   "Stage 1": 5,
-  "Stage 2 (partial)": 7.5,
   "Stage 2": 12,
   "Stage 3": 30,
   Closure: 30,
 };
-
-// An active restriction whose level couldn't be read is penalized as this level.
-export const UNSPECIFIED_RESTRICTION_PENALTY_LEVEL: FireLevel = "Stage 1";
 
 // Short, lower-case labels for risk tolerance, used in explanations.
 export const RISK_LABELS: Record<1 | 2 | 3 | 4, string> = {

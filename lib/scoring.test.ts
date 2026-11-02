@@ -148,8 +148,6 @@ test("fire penalty: magnitudes per level, none/unknown cost nothing", () => {
   assert.equal(firePenaltyFor("none"), 0);
   assert.equal(firePenaltyFor("unknown"), 0);
   assert.equal(firePenaltyFor("Stage 1"), -5);
-  assert.equal(firePenaltyFor("restriction"), -5, "unreadable active level = Stage 1");
-  assert.equal(firePenaltyFor("Stage 2 (partial)"), -7.5);
   assert.equal(firePenaltyFor("Stage 2"), -12);
   assert.equal(firePenaltyFor("Stage 3"), -30);
   assert.equal(firePenaltyFor("Closure"), -30);
@@ -166,7 +164,5 @@ test("fire penalty: stricter restriction = lower final score", () => {
   assert.equal(score("Stage 1"), none - 5);
   assert.equal(score("Stage 2"), none - 12);
   assert.equal(score("Closure"), none - 30);
-  const partial = score("Stage 2 (partial)");
-  assert.ok(partial <= none - 7 && partial >= none - 8, "-7.5 rounds within the final score");
   assert.equal(calculateTripScore(prefs, zone, "Stage 2").firePenalty, -12);
 });

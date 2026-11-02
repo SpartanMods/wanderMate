@@ -4,6 +4,7 @@ import tripZones from "@/data/tripZones";
 import { fetchWeatherForCoords } from "@/lib/conditions/weatherGov";
 import { fetchNearbyFacilities } from "@/lib/conditions/ridb";
 import { fetchFireRestrictions } from "@/lib/conditions/fireRestrictions";
+import { CACHE_KEY_PARAM } from "@/lib/conditions/fireSources";
 import { fetchLiveConditions, noCoordsConditions } from "@/lib/conditions";
 import * as fx from "@/lib/conditions/__fixtures__/responses";
 
@@ -46,8 +47,8 @@ function stubFetch(routes: Route[]) {
 
 const isPoints = (u: string) => u.includes("api.weather.gov/points/");
 const isForecast = (u: string) => u === fx.FORECAST_URL;
-const isUsfs = (u: string) => u.includes("apps.fs.usda.gov");
-const isBlm = (u: string) => u.includes("gis.blm.gov");
+const isPsicc = (u: string) => u.includes("PSICCRangerDistrictsFireRestrictions");
+const isBlmRma = (u: string) => u.includes("Rocky_Mountain_Area_BLM_Fire_Restriction");
 const isRidb = (u: string) => u.includes("ridb.recreation.gov");
 
 const LAT = 39.0;
@@ -95,55 +96,98 @@ test("weather: network error returns null", async () => {
 
 // --- fire restrictions -----------------------------------------------------
 
-test("fire: picks the worst USFS level and its area", async () => {
-  stubFetch([
-    { match: isUsfs, body: fx.usfsStage2 },
-    { match: isBlm, body: fx.blmNone },
-  ]);
-  const result = await fetchFireRestrictions(LAT, LNG);
-  assert.ok(result);
-  assert.equal(result.hasActiveRestriction, true);
-  assert.equal(result.restrictionLevel, "Stage 2");
-  assert.equal(result.affectedArea, "Grand Mesa NF");
-  assert.equal(result.source, "usfs");
+/** A Colorado zone covered by both PSICC (USFS) and BLM-RMA, coverage complete. */
+const FIRE_ZONE = "buena-vista-fourmile";
+
+const psiccRow = (FireRestct: string) => ({
+  features: [{ attributes: { FireRestct, DISTRICTNA: "Salida Ranger District", FORESTNAME: "San Isabel National Forest" } }],
+});
+const blmRow = (restriction_status: string) => ({
+  features: [
+    { attributes: { restriction_status, admin_unit_nm: "Royal Gorge Field Office", county_name: "Chaffee County", state: "Colorado" } },
+  ],
 });
 
-test("fire: no features from either source = no active restriction", async () => {
+test("fire: a Stage 2 district beats a clear BLM unit", async () => {
   stubFetch([
-    { match: isUsfs, body: fx.usfsNone },
-    { match: isBlm, body: fx.blmNone },
+    { match: isPsicc, body: psiccRow("3") },
+    { match: isBlmRma, body: blmRow("Year Round") },
   ]);
-  const result = await fetchFireRestrictions(LAT, LNG);
-  assert.ok(result);
-  assert.equal(result.hasActiveRestriction, false);
-  assert.equal(result.restrictionLevel, null);
+  const { fire, failed } = await fetchFireRestrictions(FIRE_ZONE, LAT, LNG);
+  assert.equal(failed, false);
+  assert.ok(fire?.hasActiveRestriction);
+  assert.equal(fire.restrictionLevel, "Stage 2");
+  assert.equal(fire.affectedArea, "Salida Ranger District, San Isabel National Forest");
+  assert.deepEqual(fire.sources, ["usfs-psicc"]);
 });
 
-test("fire: unparseable USFS text is unknown, not an all-clear", async () => {
+test("fire: every source clear on a fully covered zone = no restriction", async () => {
   stubFetch([
-    { match: isUsfs, body: fx.usfsUnparseable },
-    { match: isBlm, body: fx.blmNone },
+    { match: isPsicc, body: psiccRow("1") },
+    { match: isBlmRma, body: blmRow("Year Round") },
   ]);
-  assert.equal(await fetchFireRestrictions(LAT, LNG), null);
+  const { fire, failed } = await fetchFireRestrictions(FIRE_ZONE, LAT, LNG);
+  assert.equal(failed, false);
+  assert.equal(fire?.hasActiveRestriction, false);
+  assert.deepEqual(fire?.sources, ["usfs-psicc", "blm-rma"]);
 });
 
-test("fire: BLM is skipped until #11 lands", async () => {
+test("fire: one source failing makes a clear zone unknown and reports the failure", async () => {
+  stubFetch([
+    { match: isPsicc, body: psiccRow("1") },
+    { match: isBlmRma, status: 503 },
+  ]);
+  assert.deepEqual(await fetchFireRestrictions(FIRE_ZONE, LAT, LNG), { fire: null, failed: true });
+});
+
+test("fire: schema mismatch is unknown and a failure, not an all-clear", async () => {
+  stubFetch([
+    { match: isPsicc, body: { features: [{ attributes: { STAGE: "1" } }] } },
+    { match: isBlmRma, body: blmRow("Year Round") },
+  ]);
+  assert.deepEqual(await fetchFireRestrictions(FIRE_ZONE, LAT, LNG), { fire: null, failed: true });
+});
+
+test("fire: a failed answer is retried once under a fresh cache key", async () => {
   const fetchMock = stubFetch([
-    { match: isUsfs, body: fx.usfsNone },
-    { match: isBlm, body: fx.blmNone },
+    { match: (u) => isPsicc(u) && u.includes(`${CACHE_KEY_PARAM}=`), body: psiccRow("1") },
+    { match: isPsicc, body: { error: { code: 500, message: "Internal error" } } },
+    { match: isBlmRma, body: blmRow("Year Round") },
   ]);
-  const result = await fetchFireRestrictions(LAT, LNG);
-  assert.equal(result?.source, "usfs");
-  const blmCalls = fetchMock.mock.calls.filter((c) => isBlm(String(c.arguments[0])));
-  assert.equal(blmCalls.length, 0);
+  const { fire, failed } = await fetchFireRestrictions(FIRE_ZONE, LAT, LNG);
+  assert.equal(failed, false);
+  assert.equal(fire?.hasActiveRestriction, false);
+  const psiccCalls = fetchMock.mock.calls.filter((c) => isPsicc(String(c.arguments[0])));
+  assert.equal(psiccCalls.length, 2);
 });
 
-test("fire: both sources failing returns null", async () => {
-  stubFetch([
-    { match: isUsfs, throws: true },
-    { match: isBlm, status: 503 },
+test("fire: answers that aren't failures are not retried", async () => {
+  const fetchMock = stubFetch([
+    { match: isPsicc, body: { features: [] } }, // no district polygon: not covered
+    { match: isBlmRma, body: blmRow("Year Round") },
   ]);
-  assert.equal(await fetchFireRestrictions(LAT, LNG), null);
+  assert.deepEqual(await fetchFireRestrictions(FIRE_ZONE, LAT, LNG), { fire: null, failed: false });
+  assert.equal(fetchMock.mock.callCount(), 2);
+});
+
+test("fire: incomplete coverage is unknown even when sources are clear, without a failure", async () => {
+  stubFetch([{ match: isBlmRma, body: blmRow("Year Round") }]);
+  assert.deepEqual(await fetchFireRestrictions("walden-north-park", LAT, LNG), { fire: null, failed: false });
+});
+
+test("fire: zones without a source make no requests and aren't failures", async () => {
+  const fetchMock = stubFetch([]);
+  assert.deepEqual(await fetchFireRestrictions("flat-tops", LAT, LNG), { fire: null, failed: false });
+  assert.deepEqual(await fetchFireRestrictions("not-a-zone", LAT, LNG), { fire: null, failed: false });
+  assert.equal(fetchMock.mock.callCount(), 0);
+});
+
+test("fire: network errors on every source return unknown and a failure", async () => {
+  stubFetch([
+    { match: isPsicc, throws: true },
+    { match: isBlmRma, throws: true },
+  ]);
+  assert.deepEqual(await fetchFireRestrictions(FIRE_ZONE, LAT, LNG), { fire: null, failed: true });
 });
 
 // --- RIDB --------------------------------------------------------------------
@@ -178,16 +222,38 @@ test("live conditions: a failing source doesn't block the others", async () => {
   process.env.RIDB_API_KEY = "test-key";
   stubFetch([
     { match: isPoints, throws: true },
-    { match: isUsfs, body: fx.usfsStage2 },
-    { match: isBlm, body: fx.blmNone },
+    { match: isPsicc, body: psiccRow("3") },
+    { match: isBlmRma, body: blmRow("Year Round") },
     { match: isRidb, body: fx.ridbFacilities },
   ]);
-  const zone = { ...tripZones[0], coordinates: { lat: LAT, lng: LNG } };
+  const base = tripZones.find((z) => z.id === FIRE_ZONE);
+  assert.ok(base);
+  const zone = { ...base, coordinates: { lat: LAT, lng: LNG } };
   const result = await fetchLiveConditions(zone);
   assert.equal(result.weather, null);
   assert.equal(result.fire?.restrictionLevel, "Stage 2");
   assert.equal(result.nearbyFacilities.length, 1);
   assert.equal(result.unavailableReason, null);
+});
+
+test("live conditions: hasError reports a failed fire lookup, not a coverage gap", async () => {
+  delete process.env.RIDB_API_KEY;
+  const base = tripZones.find((z) => z.id === FIRE_ZONE);
+  assert.ok(base);
+  const zone = { ...base, coordinates: { lat: LAT, lng: LNG } };
+  stubFetch([
+    { match: isPoints, throws: true },
+    { match: isPsicc, status: 503 },
+    { match: isBlmRma, body: blmRow("Year Round") },
+  ]);
+  assert.equal((await fetchLiveConditions(zone)).hasError, true);
+
+  mock.restoreAll();
+  stubFetch([{ match: isPoints, throws: true }]);
+  const uncovered = { ...zone, id: "flat-tops" };
+  const result = await fetchLiveConditions(uncovered);
+  assert.equal(result.fire, null);
+  assert.equal(result.hasError, false);
 });
 
 test("live conditions: zone without coordinates makes no requests", async () => {
@@ -230,10 +296,16 @@ test("timeout: weather within the shared budget succeeds", async () => {
   assert.equal(result?.shortForecast, "Mostly Sunny");
 });
 
-test("timeout: a hung USFS request becomes unknown (null)", async () => {
-  stubFetch([{ match: isUsfs, body: fx.usfsStage2, delayMs: 10_000 }]);
+test("timeout: a hung fire source becomes unknown (null)", async () => {
+  stubFetch([
+    { match: isPsicc, body: psiccRow("1"), delayMs: 10_000 },
+    { match: isBlmRma, body: blmRow("Year Round") },
+  ]);
   const started = Date.now();
-  assert.equal(await fetchFireRestrictions(LAT, LNG, TEST_TIMEOUT_MS), null);
+  assert.deepEqual(await fetchFireRestrictions(FIRE_ZONE, LAT, LNG, TEST_TIMEOUT_MS), {
+    fire: null,
+    failed: true,
+  });
   assert.ok(Date.now() - started < 1_000, "should give up at the timeout, not wait for the response");
 });
 
