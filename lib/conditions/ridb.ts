@@ -7,15 +7,6 @@ function apiKey(): string {
   return process.env.RIDB_API_KEY ?? "";
 }
 
-function parseStatus(raw: unknown): RidbFacility["status"] {
-  if (typeof raw !== "string") return null;
-  const upper = raw.toUpperCase();
-  if (upper.includes("CLOSE")) return "Closed";
-  if (upper.includes("LIMITED") || upper.includes("PARTIAL")) return "Limited";
-  if (upper.includes("OPEN")) return "Open";
-  return null;
-}
-
 /**
  * Returns up to `limit` RIDB facilities within `radiusMiles` of the given
  * coordinates. Returns an empty array if the API key is missing or the
@@ -53,7 +44,6 @@ export async function fetchNearbyFacilities(
       facilityName: String(item.FacilityName ?? ""),
       facilityType: String(item.FacilityTypeDescription ?? ""),
       reservable: Boolean(item.Reservable),
-      status: parseStatus(item.FacilityAdaAccess ?? item.FacilityDescription),
     }));
   } catch {
     return [];

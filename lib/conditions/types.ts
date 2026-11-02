@@ -42,13 +42,12 @@ export type RidbFacility = {
   facilityName: string;
   facilityType: string;
   reservable: boolean;
-  /** Null means status unknown */
-  status: "Open" | "Closed" | "Limited" | null;
+  // No open/closed status: RIDB has no such field (#36).
 };
 
 export type LiveConditions = {
   weather: WeatherCondition | null;
-  /** Worst (highest) fire restriction found within ~50 mi */
+  /** Worst (highest) fire restriction within FIRE_SEARCH_RADIUS_MILES; null = unknown */
   fire: FireRestriction | null;
   /** Nearby Recreation.gov facilities */
   nearbyFacilities: RidbFacility[];

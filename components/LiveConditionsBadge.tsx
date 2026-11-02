@@ -117,22 +117,10 @@ export function LiveConditionsBadge({
                 key={f.facilityId}
                 className="flex items-center gap-2 text-xs text-sand-200/70"
               >
-                <span
-                  className={
-                    f.status === "Closed"
-                      ? "text-rust-400"
-                      : f.status === "Limited"
-                        ? "text-amber-400"
-                        : "text-moss-400"
-                  }
-                  aria-hidden
-                >
-                  {f.status === "Closed" ? "✗" : f.status === "Limited" ? "~" : "·"}
+                <span className="text-moss-400" aria-hidden>
+                  ·
                 </span>
                 {f.facilityName}
-                {f.status && (
-                  <span className="text-sand-200/40">({f.status})</span>
-                )}
               </li>
             ))}
           </ul>
