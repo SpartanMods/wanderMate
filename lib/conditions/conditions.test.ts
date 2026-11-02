@@ -70,14 +70,17 @@ test("weather: points → forecast maps the first period", async () => {
   ]);
   const result = await fetchWeatherForCoords(LAT, LNG);
   assert.ok(result);
-  assert.equal(result.shortForecast, "Mostly Sunny");
-  assert.equal(result.temperature, 68);
+  // First period of the recorded Taylor Park forecast.
+  assert.equal(result.shortForecast, "Slight Chance T-storms then Rain And Snow Showers");
+  assert.equal(result.temperature, 27);
   assert.equal(result.temperatureUnit, "F");
-  assert.equal(result.windSpeed, "5 to 10 mph");
+  assert.equal(result.windSpeed, "5 to 15 mph");
+  assert.equal(result.icon, "https://api.weather.gov/icons/land/night/snow,80?size=medium");
 });
 
-test("weather: non-OK points response returns null", async () => {
-  stubFetch([{ match: isPoints, status: 404 }]);
+test("weather: a point outside NWS coverage (recorded 404) returns null", async () => {
+  const { _recorded, response } = fx.weatherPointsOutsideCoverage;
+  stubFetch([{ match: isPoints, status: _recorded.status, body: response }]);
   assert.equal(await fetchWeatherForCoords(LAT, LNG), null);
 });
 
@@ -199,15 +202,19 @@ test("ridb: returns empty array when RIDB_API_KEY is missing, without fetching",
   assert.equal(fetchMock.mock.callCount(), 0);
 });
 
-test("ridb: maps facilities from RECDATA", async () => {
+test("ridb: maps facilities from RECDATA (recorded)", async () => {
   process.env.RIDB_API_KEY = "test-key";
   stubFetch([{ match: isRidb, body: fx.ridbFacilities }]);
   const result = await fetchNearbyFacilities(LAT, LNG);
-  assert.equal(result.length, 1);
-  assert.equal(result[0].facilityId, "233512");
-  assert.equal(result[0].facilityName, "Example Campground");
-  assert.equal(result[0].reservable, true);
-  assert.equal(result[0].status, "Open");
+  assert.equal(result.length, 5);
+  assert.deepEqual(result[0], {
+    facilityId: "250026",
+    facilityName: "LOTTIS CREEK CAMPGROUND",
+    facilityType: "Campground",
+    reservable: true,
+    // RIDB has no open/closed field; `status` reads the ADA-access field (#36).
+    status: null,
+  });
 });
 
 test("ridb: HTTP error returns empty array", async () => {
@@ -232,7 +239,7 @@ test("live conditions: a failing source doesn't block the others", async () => {
   const result = await fetchLiveConditions(zone);
   assert.equal(result.weather, null);
   assert.equal(result.fire?.restrictionLevel, "Stage 2");
-  assert.equal(result.nearbyFacilities.length, 1);
+  assert.equal(result.nearbyFacilities.length, 5);
   assert.equal(result.unavailableReason, null);
 });
 
@@ -293,7 +300,7 @@ test("timeout: weather within the shared budget succeeds", async () => {
     { match: isForecast, body: fx.weatherForecast, delayMs: 5 },
   ]);
   const result = await fetchWeatherForCoords(LAT, LNG, TEST_TIMEOUT_MS);
-  assert.equal(result?.shortForecast, "Mostly Sunny");
+  assert.equal(result?.temperature, 27);
 });
 
 test("timeout: a hung fire source becomes unknown (null)", async () => {

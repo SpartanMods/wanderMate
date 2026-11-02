@@ -1,0 +1,555 @@
+{
+  "_recorded": {
+    "at": "2026-11-02T04:11:32.697Z",
+    "url": "https://ridb.recreation.gov/api/v1/facilities?latitude=38.8388&longitude=-106.5784&radius=50&limit=5&full=true",
+    "status": 200
+  },
+  "response": {
+    "METADATA": {
+      "RESULTS": {
+        "CURRENT_COUNT": 5,
+        "TOTAL_COUNT": 82
+      },
+      "SEARCH_PARAMETERS": {
+        "LIMIT": 5,
+        "OFFSET": 0,
+        "QUERY": ""
+      }
+    },
+    "RECDATA": [
+      {
+        "ACTIVITY": [
+          {
+            "ActivityID": 25,
+            "ActivityName": "WATER SPORTS",
+            "FacilityActivityDescription": "Whitewater Rafting",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "250026"
+          },
+          {
+            "ActivityID": 24,
+            "ActivityName": "VISITOR CENTER",
+            "FacilityActivityDescription": "Emergency Services",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "250026"
+          },
+          {
+            "ActivityID": 15,
+            "ActivityName": "HORSEBACK RIDING",
+            "FacilityActivityDescription": "Horse Rentals",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "250026"
+          },
+          {
+            "ActivityID": 14,
+            "ActivityName": "HIKING",
+            "FacilityActivityDescription": "Hiking",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "250026"
+          },
+          {
+            "ActivityID": 11,
+            "ActivityName": "FISHING",
+            "FacilityActivityDescription": "Fishing",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "250026"
+          },
+          {
+            "ActivityID": 9,
+            "ActivityName": "CAMPING",
+            "FacilityActivityDescription": "Camping",
+            "FacilityActivityFeeDescription": "Camping",
+            "FacilityID": "250026"
+          },
+          {
+            "ActivityID": 6,
+            "ActivityName": "BOATING",
+            "FacilityActivityDescription": "Kayak Rentals",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "250026"
+          },
+          {
+            "ActivityID": 5,
+            "ActivityName": "BIKING",
+            "FacilityActivityDescription": "Mountain Biking",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "250026"
+          }
+        ],
+        "CAMPSITE": [],
+        "EVENT": [],
+        "Enabled": true,
+        "FACILITYADDRESS": [
+          {
+            "AddressCountryCode": "USA",
+            "AddressStateCode": "CO",
+            "City": "Gunnison",
+            "FacilityAddressID": "20440221",
+            "FacilityAddressType": "Default",
+            "FacilityID": "250026",
+            "FacilityStreetAddress1": "Cty Rd. 742, Taylor River Canyon ",
+            "FacilityStreetAddress2": "",
+            "FacilityStreetAddress3": "",
+            "LastUpdatedDate": "2026-03-11",
+            "PostalCode": "81231"
+          }
+        ],
+        "FacilityAccessibilityText": "",
+        "FacilityAdaAccess": "N",
+        "FacilityDescription": "<h2>Overview</h2>\nLocated in the Grand Mesa Uncompahgre and Gunnison National Forests, Lottis Creek Campground is at an elevation of 8,600 feet above sea level. On the shores of Lottis Creek, this newly remodeled campground is a perfect getaway for anyone that loves the outdoors. Nestled in lodgepole pines down the Taylor River Canyon, Lottis Creek Campground is great for anglers, hikers, bikers, and four-wheeler enthusiasts.<h2>Recreation</h2>\nTwo miles to the south, visitors will find access to the Fossil Ridge Wilderness Area. Hikers and equestrians can enjoy the trails of this pristine natural area. No mechanized or motorized vehicles are permitted in any Wilderness area. To the east of Lottis Creek Campground, four-wheel drivers will find many roads to explore. Cumberland Pass Road provides access to most of these trails.<h2>Facilities</h2>\n<p>There are 47 single family campsites. There is one group site accommodating 50 people and 10 vehicles with a group pavilion. This facility was completely renovated in 2012 with electric hookups at most sites. Each site is equipped with a picnic table and campfire ring.</p>\n<h2>Natural Features</h2>\n<b>Many of the electric hookup campsites benefit from the shade provided by the lodgepole pines in the campground.</b>\n<h2>Nearby Attractions</h2>\nTaylor Park Reservoir is just a few miles from the campground, offering boating, fishing and swimming opportunities. A boat ramp and boat rentals are available there as well.â??Many trails for hikers are close by. Fishing is abundant in many areas and you will find numerous four-wheel drive trails.\n<h2>Contact Info</h2>\nFor facility specific information, please call (928) 537-8888.",
+        "FacilityDirections": "From Gunnison, Colo., travel north on Highway 135 for 10 miles to Almont.  At intersection of State Rt. 135 and County Rt. 742, take Rt. 742 for 16.7 miles to campground sign.  Turn right into campground.",
+        "FacilityEmail": "camping@rrmofa.com",
+        "FacilityID": "250026",
+        "FacilityLatitude": 38.7755833,
+        "FacilityLongitude": -106.6275306,
+        "FacilityMapURL": "",
+        "FacilityName": "LOTTIS CREEK CAMPGROUND",
+        "FacilityPhone": "",
+        "FacilityReservationURL": "",
+        "FacilityTypeDescription": "Campground",
+        "FacilityUseFeeDescription": "",
+        "GEOJSON": {
+          "COORDINATES": [
+            -106.6275306,
+            38.7755833
+          ],
+          "TYPE": "Point"
+        },
+        "Keywords": "LOTTIS CREEK CAMPGROUND",
+        "LINK": [
+          {
+            "Description": "   ",
+            "EntityID": "250026",
+            "EntityLinkID": "r1scgld5151473-eead-4f49-b838-f617ee8350b6",
+            "EntityType": "Facility",
+            "LinkType": "Other",
+            "Title": "Print Facility Map",
+            "URL": "http://cdn.recreation.gov/webphotos/facilitymaps/116389_F389.pdf"
+          },
+          {
+            "Description": "Colorado State Tourism",
+            "EntityID": "250026",
+            "EntityLinkID": "r1scgl7f9f1f4d-d06e-47b6-a897-5c1e7d329945",
+            "EntityType": "Facility",
+            "LinkType": "Other",
+            "Title": "Colorado State Tourism",
+            "URL": "http://www.colorado.com"
+          },
+          {
+            "Description": "Colorado State Road Conditions",
+            "EntityID": "250026",
+            "EntityLinkID": "r1scgl94c88a24-56f9-43e0-97c5-cd0e585a80b5",
+            "EntityType": "Facility",
+            "LinkType": "Other",
+            "Title": "Colorado State Road Conditions",
+            "URL": "https://www.codot.gov/"
+          },
+          {
+            "Description": "Recreation Resource Management of America, Inc.",
+            "EntityID": "250026",
+            "EntityLinkID": "r1scgl90e7c732-d9d4-4e06-a4fc-1e442df9d738",
+            "EntityType": "Facility",
+            "LinkType": "Other",
+            "Title": "Recreation Resource Management of America, Inc.",
+            "URL": "https://rrmofa.com/"
+          }
+        ],
+        "LastUpdatedDate": "2026-03-11",
+        "LegacyFacilityID": "116389",
+        "MEDIA": [
+          {
+            "Credits": "Share the Experience, David Forrest",
+            "Description": "Grand Mesa, Uncompahgre, and Gunnison National Forest",
+            "EmbedCode": "",
+            "EntityID": "250026",
+            "EntityMediaID": "4863788e-6ff4-4749-857a-c889ee61aace",
+            "EntityType": "Facility",
+            "Height": 526,
+            "IsGallery": false,
+            "IsPreview": true,
+            "IsPrimary": false,
+            "MediaType": "Image",
+            "Subtitle": "",
+            "Title": "Grand Mesa, Uncompahgre, and Gunnison National Forest",
+            "URL": "https://cdn.recreation.gov/public/2019/08/12/18/34/250026_c61af41e-bcf8-4a3a-a92d-761e529869b0_700.webp",
+            "Width": 700
+          },
+          {
+            "Credits": "Share the Experience, David Forrest",
+            "Description": "Grand Mesa, Uncompahgre, and Gunnison National Forest",
+            "EmbedCode": "",
+            "EntityID": "250026",
+            "EntityMediaID": "b52f2c52-717a-42ba-a790-27ac50e4d33a",
+            "EntityType": "Facility",
+            "Height": 340,
+            "IsGallery": false,
+            "IsPreview": false,
+            "IsPrimary": true,
+            "MediaType": "Image",
+            "Subtitle": "",
+            "Title": "Grand Mesa, Uncompahgre, and Gunnison National Forest",
+            "URL": "https://cdn.recreation.gov/public/2019/08/12/18/33/250026_fd363200-626e-420c-bd4c-ceccdcf9ceba_1440.webp",
+            "Width": 1440
+          }
+        ],
+        "ORGANIZATION": [
+          {
+            "LastUpdatedDate": "2018-06-26",
+            "OrgAbbrevName": "FS",
+            "OrgID": "131",
+            "OrgImageURL": "fs.jpg",
+            "OrgJurisdictionType": "State",
+            "OrgName": "USDA Forest Service",
+            "OrgParentID": "163",
+            "OrgType": "Federal Agency",
+            "OrgURLAddress": "http://www.fs.fed.us",
+            "OrgURLText": ""
+          }
+        ],
+        "OrgFacilityID": "AN416389",
+        "PERMITENTRANCE": [],
+        "ParentOrgID": "131",
+        "ParentRecAreaID": "1052",
+        "RECAREA": [
+          {
+            "RecAreaID": "1052",
+            "RecAreaName": "Grand Mesa, Uncompahgre and Gunnison National Forest",
+            "ResourceLink": "http://localhost:3000/api/v1/recareas/1052"
+          }
+        ],
+        "Reservable": true,
+        "StayLimit": "",
+        "TOUR": []
+      },
+      {
+        "ACTIVITY": [],
+        "CAMPSITE": [],
+        "EVENT": [],
+        "Enabled": true,
+        "FACILITYADDRESS": [],
+        "FacilityAccessibilityText": "",
+        "FacilityAdaAccess": "",
+        "FacilityDescription": "<h2>Overview</h2>\n<p>This location is available on a first-come, first-served basis only. Visitors are required to physically arrive at the campground to purchase and claim a site. Once on-site, you may be able to pay for your campsite(s) by scanning a QR code using the Recreation.gov mobile app, and the Scan and Pay feature.</p>\n<p>If this option is available, you will need to <strong>first download the free Recreation.gov mobile app https://www.recreation.gov/mobile-app prior to your arrival</strong> as some remote areas have limited or no cellular service.</p>\n<h2>Facilities</h2>\n<p>Located off the Halfmoon Road (FSR110), Halfmoon West is a first-come, first-served campground, with 17 sites, near the Mount Elbert and Mount Massive Trailheads at 9,900 feet. This is a very popular campground for hikers. Facilities include picnic tables, fire rings with grates, and vault toilets.</p>\n\n\n\n<h2>Contact Info</h2>\nFor facility specific information, please call (661) 702-1420.",
+        "FacilityDirections": "",
+        "FacilityEmail": "tbolton@goexplorus.com",
+        "FacilityID": "10165335",
+        "FacilityLatitude": 39.157616,
+        "FacilityLongitude": -106.397855,
+        "FacilityMapURL": "",
+        "FacilityName": "Halfmoon West",
+        "FacilityPhone": "N/A",
+        "FacilityReservationURL": "",
+        "FacilityTypeDescription": "Campground",
+        "FacilityUseFeeDescription": "",
+        "GEOJSON": {
+          "COORDINATES": [
+            -106.397855,
+            39.157616
+          ],
+          "TYPE": "Point"
+        },
+        "Keywords": "",
+        "LINK": [],
+        "LastUpdatedDate": "2026-02-25",
+        "LegacyFacilityID": "10165335",
+        "MEDIA": [],
+        "ORGANIZATION": [
+          {
+            "LastUpdatedDate": "2018-06-26",
+            "OrgAbbrevName": "FS",
+            "OrgID": "131",
+            "OrgImageURL": "fs.jpg",
+            "OrgJurisdictionType": "State",
+            "OrgName": "USDA Forest Service",
+            "OrgParentID": "163",
+            "OrgType": "Federal Agency",
+            "OrgURLAddress": "http://www.fs.fed.us",
+            "OrgURLText": ""
+          }
+        ],
+        "OrgFacilityID": "",
+        "PERMITENTRANCE": [],
+        "ParentOrgID": "131",
+        "ParentRecAreaID": "1053",
+        "RECAREA": [
+          {
+            "RecAreaID": "1053",
+            "RecAreaName": "Pike and San Isabel National Forests & Cimarron and Comanche National Grasslands",
+            "ResourceLink": "http://localhost:3000/api/v1/recareas/1053"
+          }
+        ],
+        "Reservable": true,
+        "StayLimit": "",
+        "TOUR": []
+      },
+      {
+        "ACTIVITY": [],
+        "CAMPSITE": [],
+        "EVENT": [],
+        "Enabled": true,
+        "FACILITYADDRESS": [],
+        "FacilityAccessibilityText": "",
+        "FacilityAdaAccess": "",
+        "FacilityDescription": "<h2>Overview</h2>\n<p>This location is available on a first-come, first-served basis only. Visitors are required to physically arrive at the campground to purchase and claim a site. Once on-site, you may be able to pay for your campsite(s) by scanning a QR code using the Recreation.gov mobile app, and the Scan and Pay feature.</p>\n\n<p>If this option is available, you will need to <strong>first download the free Recreation.gov mobile app https://www.recreation.gov/mobile-app prior to your arrival </strong>as some remote  areas have limited or no cellular service.</p>\n",
+        "FacilityDirections": "",
+        "FacilityEmail": "camping@rrmofa.com",
+        "FacilityID": "10165230",
+        "FacilityLatitude": 38.767345,
+        "FacilityLongitude": -106.642482,
+        "FacilityMapURL": "",
+        "FacilityName": "Cold Spring (CO)",
+        "FacilityPhone": "N/A",
+        "FacilityReservationURL": "",
+        "FacilityTypeDescription": "Campground",
+        "FacilityUseFeeDescription": "",
+        "GEOJSON": {
+          "COORDINATES": [
+            -106.642482,
+            38.767345
+          ],
+          "TYPE": "Point"
+        },
+        "Keywords": "",
+        "LINK": [],
+        "LastUpdatedDate": "2026-02-25",
+        "LegacyFacilityID": "10165230",
+        "MEDIA": [],
+        "ORGANIZATION": [
+          {
+            "LastUpdatedDate": "2018-06-26",
+            "OrgAbbrevName": "FS",
+            "OrgID": "131",
+            "OrgImageURL": "fs.jpg",
+            "OrgJurisdictionType": "State",
+            "OrgName": "USDA Forest Service",
+            "OrgParentID": "163",
+            "OrgType": "Federal Agency",
+            "OrgURLAddress": "http://www.fs.fed.us",
+            "OrgURLText": ""
+          }
+        ],
+        "OrgFacilityID": "",
+        "PERMITENTRANCE": [],
+        "ParentOrgID": "131",
+        "ParentRecAreaID": "1052",
+        "RECAREA": [
+          {
+            "RecAreaID": "1052",
+            "RecAreaName": "Grand Mesa, Uncompahgre and Gunnison National Forest",
+            "ResourceLink": "http://localhost:3000/api/v1/recareas/1052"
+          }
+        ],
+        "Reservable": true,
+        "StayLimit": "",
+        "TOUR": []
+      },
+      {
+        "ACTIVITY": [],
+        "CAMPSITE": [],
+        "EVENT": [],
+        "Enabled": true,
+        "FACILITYADDRESS": [],
+        "FacilityAccessibilityText": "",
+        "FacilityAdaAccess": "",
+        "FacilityDescription": "<h2>Overview</h2>\n<p>This location is available on a first-come, first-served basis only. Visitors are required to physically arrive at the campground to purchase and claim a site. Once on-site, you may be able to pay for your campsite(s) by scanning a QR code using the Recreation.gov mobile app, and the Scan and Pay feature.</p>\n<p>If this option is available, you will need to <strong>first download the free Recreation.gov mobile app https://www.recreation.gov/mobile-app prior to your arrival</strong> as some remote areas have limited or no cellular service.</p>\n<h2>Facilities</h2>\n<p>Located off the Halfmoon Road (FSR 110), Halfmoon East is a first-come, first-served campground, with 5 sites, near the Mount Elbert and Mount Massive Trailheads at 9,900 feet. This is a very popular campground for hikers. Facilities include picnic tables, fire rings with grates, and vault toilets.</p>\n\n<h2>Contact Info</h2>\nFor facility specific information, please call (661) 702-1420.",
+        "FacilityDirections": "",
+        "FacilityEmail": "tbolton@goexplorus.com",
+        "FacilityID": "10165330",
+        "FacilityLatitude": 39.158821,
+        "FacilityLongitude": -106.396856,
+        "FacilityMapURL": "",
+        "FacilityName": "Halfmoon East",
+        "FacilityPhone": "N/A",
+        "FacilityReservationURL": "",
+        "FacilityTypeDescription": "Campground",
+        "FacilityUseFeeDescription": "",
+        "GEOJSON": {
+          "COORDINATES": [
+            -106.396856,
+            39.158821
+          ],
+          "TYPE": "Point"
+        },
+        "Keywords": "",
+        "LINK": [],
+        "LastUpdatedDate": "2026-02-25",
+        "LegacyFacilityID": "10165330",
+        "MEDIA": [],
+        "ORGANIZATION": [
+          {
+            "LastUpdatedDate": "2018-06-26",
+            "OrgAbbrevName": "FS",
+            "OrgID": "131",
+            "OrgImageURL": "fs.jpg",
+            "OrgJurisdictionType": "State",
+            "OrgName": "USDA Forest Service",
+            "OrgParentID": "163",
+            "OrgType": "Federal Agency",
+            "OrgURLAddress": "http://www.fs.fed.us",
+            "OrgURLText": ""
+          }
+        ],
+        "OrgFacilityID": "",
+        "PERMITENTRANCE": [],
+        "ParentOrgID": "131",
+        "ParentRecAreaID": "1053",
+        "RECAREA": [
+          {
+            "RecAreaID": "1053",
+            "RecAreaName": "Pike and San Isabel National Forests & Cimarron and Comanche National Grasslands",
+            "ResourceLink": "http://localhost:3000/api/v1/recareas/1053"
+          }
+        ],
+        "Reservable": true,
+        "StayLimit": "",
+        "TOUR": []
+      },
+      {
+        "ACTIVITY": [
+          {
+            "ActivityID": 26,
+            "ActivityName": "WILDLIFE VIEWING",
+            "FacilityActivityDescription": "Wildlife Viewing",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "232152"
+          },
+          {
+            "ActivityID": 14,
+            "ActivityName": "HIKING",
+            "FacilityActivityDescription": "Hiking",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "232152"
+          },
+          {
+            "ActivityID": 11,
+            "ActivityName": "FISHING",
+            "FacilityActivityDescription": "Fishing",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "232152"
+          },
+          {
+            "ActivityID": 9,
+            "ActivityName": "CAMPING",
+            "FacilityActivityDescription": "Camping",
+            "FacilityActivityFeeDescription": "Camping",
+            "FacilityID": "232152"
+          },
+          {
+            "ActivityID": 5,
+            "ActivityName": "BIKING",
+            "FacilityActivityDescription": "Biking",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "232152"
+          },
+          {
+            "ActivityID": 6,
+            "ActivityName": "BOATING",
+            "FacilityActivityDescription": "Boating",
+            "FacilityActivityFeeDescription": "",
+            "FacilityID": "232152"
+          }
+        ],
+        "CAMPSITE": [],
+        "EVENT": [],
+        "Enabled": true,
+        "FACILITYADDRESS": [
+          {
+            "AddressCountryCode": "USA",
+            "AddressStateCode": "CO",
+            "City": "",
+            "FacilityAddressID": "20437509",
+            "FacilityAddressType": "Mailing",
+            "FacilityID": "232152",
+            "FacilityStreetAddress1": "GUNNISON, GRAND MESA, ",
+            "FacilityStreetAddress2": "AND UNCOMPAHGRE NATL FORESTS",
+            "FacilityStreetAddress3": "",
+            "LastUpdatedDate": "2026-02-05",
+            "PostalCode": ""
+          }
+        ],
+        "FacilityAccessibilityText": "",
+        "FacilityAdaAccess": "N",
+        "FacilityDescription": "<h2>Overview</h2>\nDinner Station, a historic stop along an old stagecoach route from Aspen, is located in the Upper Taylor Park area, next to the Taylor River. The campground is a favorite among off-road and mountain biking enthusiasts. <h2>Recreation</h2>\nThe Taylor River can be accessed from within the campground. Anglers cast for rainbow and brook trout. <br/>\n<br/>\nA number of off-road trails are found in the surrounding area, including Doctor Park Trail, Taylor River Trail and Taylor Vista Trail. <h2>Facilities</h2>\nThe campground offers single-family campsites, each equipped with a picnic table and campfire ring. Vault toilets, drinking water and trash collection are provided.<h2>Natural Features</h2>\nThe campground is nestled among ponderosa and lodgepole pine trees, at the edge of a broad, flat valley dotted with sagebrush. Most campsites are situated with the Taylor River on one side and open views of the Sawatch Mountains on the other side.\n<h2>Nearby Attractions</h2>\nTaylor Park Reservoir is less than five miles from the campground, offering boating, fishing and swimming opportunities. A boat ramp and boat rentals are available there.\n<h2>Contact Info</h2>\nFor facility specific information, please call (928) 537-8888.",
+        "FacilityDirections": "From Gunnison, Colo., travel north on Colorado Highway 135 for 10 miles to Almont. Turn right (northeast) onto Taylor Canyon Road and continue 35 miles. The campground entrance is on the left.",
+        "FacilityEmail": "camping@rrmofa.com",
+        "FacilityID": "232152",
+        "FacilityLatitude": 38.9052778,
+        "FacilityLongitude": -106.5861111,
+        "FacilityMapURL": "",
+        "FacilityName": "DINNER STATION",
+        "FacilityPhone": "970-642-0566",
+        "FacilityReservationURL": "",
+        "FacilityTypeDescription": "Campground",
+        "FacilityUseFeeDescription": "",
+        "GEOJSON": {
+          "COORDINATES": [
+            -106.5861111,
+            38.9052778
+          ],
+          "TYPE": "Point"
+        },
+        "Keywords": "DINN,GUNNISON,GM,UNCOMP NF - FS ",
+        "LINK": [
+          {
+            "Description": "Recreation Resource Management of America",
+            "EntityID": "232152",
+            "EntityLinkID": "r1scgl63dd866c-e4ba-43bd-a20e-d30c136402fe",
+            "EntityType": "Facility",
+            "LinkType": "Other",
+            "Title": "Forest Service Concessionaire",
+            "URL": "http://www.rrmofa.com/"
+          },
+          {
+            "Description": "Colorado State Tourism",
+            "EntityID": "232152",
+            "EntityLinkID": "r1scgl6fda058c-222e-464c-9638-9217f7a72b34",
+            "EntityType": "Facility",
+            "LinkType": "Other",
+            "Title": "Colorado State Tourism",
+            "URL": "http://www.colorado.com"
+          },
+          {
+            "Description": "Colorado State Road Conditions",
+            "EntityID": "232152",
+            "EntityLinkID": "r1scgl7239b924-24ae-46f6-9e0f-50c1b682f836",
+            "EntityType": "Facility",
+            "LinkType": "Other",
+            "Title": "Colorado State Road Conditions",
+            "URL": "https://www.codot.gov/"
+          }
+        ],
+        "LastUpdatedDate": "2026-02-25",
+        "LegacyFacilityID": "70414",
+        "MEDIA": [],
+        "ORGANIZATION": [
+          {
+            "LastUpdatedDate": "2018-06-26",
+            "OrgAbbrevName": "FS",
+            "OrgID": "131",
+            "OrgImageURL": "fs.jpg",
+            "OrgJurisdictionType": "State",
+            "OrgName": "USDA Forest Service",
+            "OrgParentID": "163",
+            "OrgType": "Federal Agency",
+            "OrgURLAddress": "http://www.fs.fed.us",
+            "OrgURLText": ""
+          }
+        ],
+        "OrgFacilityID": "AN370414",
+        "PERMITENTRANCE": [],
+        "ParentOrgID": "131",
+        "ParentRecAreaID": "1052",
+        "RECAREA": [
+          {
+            "RecAreaID": "1052",
+            "RecAreaName": "Grand Mesa, Uncompahgre and Gunnison National Forest",
+            "ResourceLink": "http://localhost:3000/api/v1/recareas/1052"
+          }
+        ],
+        "Reservable": true,
+        "StayLimit": "",
+        "TOUR": []
+      }
+    ]
+  }
+}
